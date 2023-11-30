@@ -99,14 +99,14 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() -> 
-    [my_test_case].
+    [tag].
 
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
 %% Info = [tuple()]
 %% @end
 %%--------------------------------------------------------------------
-my_test_case() -> 
+tag() ->
     [].
 
 %%--------------------------------------------------------------------
@@ -118,5 +118,89 @@ my_test_case() ->
 %% Comment = term()
 %% @end
 %%--------------------------------------------------------------------
-my_test_case(_Config) -> 
+tag(_Config) -> 
+    % empty document
+    {ok, <<>>} = erml_tag:create([]),
+    {ok, <<>>} = erml_tag:create(<<>>),
+    
+    % simple tag without attributes
+    {ok, <<"<html></html>">>} = erml_tag:create({html, []}),
+    {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, []}),
+    {ok, <<"<html></html>">>} = erml_tag:create({"html", []}),
+    {ok, <<"<html><body></body></html>">>} 
+        = erml_tag:create({html, {body, []}}),
+
+    % simple tag with attributes
+    {ok, <<"<html></html>">>} = erml_tag:create({html, #{}, []}),
+    {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, #{}, []}),
+    {ok, <<"<html></html>">>} = erml_tag:create({"html", #{}, []}),
+    {ok, <<"<html><body></body></html>">>} 
+        = erml_tag:create({html, #{}, {body, #{}, []}}),
+
+    % simple tag with attributes support.
+    {ok, <<"<html><body class=\"test\"></body></html>">>}
+        = erml_tag:create({html, #{}, {body, #{class => "test"}, []}}),
+    {ok, <<"<html><body class=\"test\"></body></html>">>}
+        = erml_tag:create({html, #{}, {body, #{class => test}, []}}),
+    {ok, <<"<html><body class=\"test\"></body></html>">>}
+        = erml_tag:create({html, #{}, {body, #{class => <<"test">>}, []}}),
+
+    % content and entities support
+    {ok, <<"<html><body>test</body></html>">>}
+        = erml_tag:create({html, {body, <<"test">>}}),
+    {ok, <<"<html><body>test</body></html>">>}
+        = erml_tag:create({html, {body, test}}),
+    {ok, <<"<html><body>123</body></html>">>}
+        = erml_tag:create({html, {body, 123}}),
+    {ok, <<"<html><body>1.00000000000000000000e&plus;00</body></html>">>}
+        = erml_tag:create({html, {body, 1.0}}),
+    {ok, <<"<html><body><p>that&apos;s a test!</p></body></html>">>}
+        = erml_tag:create([{html, {body, {p, [<<"that's a test!">>]}}}]),
+
+    % dynamic template (gen_server call by default)
+    {ok, [ <<"<html><body>">>
+         , {gen_server,call,server,paragraph,1000}
+         , <<"</body></html>">> 
+         ]
+    } = erml_tag:create({html, {body, {call, server, paragraph}}}),
+
+    % dynamic template (gen_server call)
+    {ok, [ <<"<html><body>">>
+         , {gen_server,call,server,paragraph,1000}
+         , <<"</body></html>">>
+         ]
+    } = erml_tag:create({html, {body, {gen_server, call, server, paragraph}}}),
+
+    % dynamic template (gen_statem call)
+    {ok, [ <<"<html><body>">>
+         , {gen_statem,call,server,paragraph,1000}
+         , <<"</body></html>">>
+         ]
+    } = erml_tag:create({html, {body, {gen_statem, call, server, paragraph}}}),
+
+    % special tags
+    {ok, <<"<pre></pre>">>} = erml_tag:create({pre, []}),
+    {ok, <<"<pre>test\ndata</pre>">>} 
+        = erml_tag:create({pre, ["test", "data"]}),
+    {ok, <<"<pre><code>test\ndata</code></pre>">>}
+        = erml_tag:create({pre, {code, ["test", "data"]}}),
+
+    % explicit content with some features
+    {ok, <<"test">>}
+        = erml_tag:create({content, "test"}),
+    {ok, <<"test&amp;">>}
+        = erml_tag:create({content, "test&"}),
+    {ok, <<"test&apos;">>} 
+        = erml_tag:create({content, <<"test'">>}),
+    {ok,<<"test">>}
+        = erml_tag:create({content, test}),
+    {ok,<<"test&">>}
+        = erml_tag:create({content, <<"test&">>, #{entities => false}}),
+
     ok.
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+simple_generator() ->
+    {ok, <<"test">>}.

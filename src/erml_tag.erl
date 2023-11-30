@@ -77,7 +77,7 @@
 %%%
 %%% @end
 %%%===================================================================
--module(erml_html_tag).
+-module(erml_tag).
 -export([create/1, create/2]).
 -export([init/1]).
 -export([tag/3]).
@@ -97,7 +97,7 @@
 %%
 %%--------------------------------------------------------------------
 create(Data) -> create(Data, #{}).
-create(Data, Opts) -> erml_generator:compile(?MODULE, Opts, Data).
+create(Data, Opts) -> erml_serializer:compile(?MODULE, Opts, Data).
 
 %%--------------------------------------------------------------------
 %%

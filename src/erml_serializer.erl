@@ -2,7 +2,7 @@
 %%% @doc draft.
 %%% @end
 %%%===================================================================
--module(erml_generator).
+-module(erml_serializer).
 -export([compile/3, compile/4]).
 -export([flatten/2]).
 
