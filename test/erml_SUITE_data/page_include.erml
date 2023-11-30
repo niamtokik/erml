@@ -1,0 +1,25 @@
+%%%===================================================================
+%%% A more complex page calling other tag.
+%%%===================================================================
+{html, [
+  {head, [
+    {title, <<"Include test">>}
+  ]},
+  {body, [
+    {'div', #{id => "ascii"}, [
+      {include_raw, "raw_ascii.txt"}
+    ]},
+    {'div', #{id => "html"}, [
+      {include_raw, "raw_html.txt"}
+    ]},
+    {'div', #{id => "chinese"}, [
+      {include_raw, "raw_chinese.txt"}
+    ]},
+     {'div', #{id => "japanese"}, [
+      {include_raw, "raw_japanese.txt"}
+    ]},
+    {'div', #{id => "russian"}, [
+      {include_raw, "raw_russian.txt"}
+    ]}
+  ]}
+]}.

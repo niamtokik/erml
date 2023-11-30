@@ -1,0 +1,13 @@
+{'div', #{class => "card"}, [
+  {'div', #{class => "card-images"}, [
+    {img, #{src => {card_image_url}, class => "img-responsive"}}
+  ]},
+  {'div', #{class => "card-header"}, [
+    {'div', #{class => "card-title h5"}, {card_title}},
+    {'div', #{class => "card-subtitle text-gray"}, {card_subtitle}}
+  ]},
+  {'div', #{class => "card-body"}, {card_body}},
+  {'div', #{class => "card-footer"}, [
+    {button, #{class => "btn btn-primary"}, {card_button}}
+  ]}
+]}.

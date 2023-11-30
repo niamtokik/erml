@@ -1,0 +1,10 @@
+%%%===================================================================
+%%% Simple code template.
+%%%===================================================================
+{code, [
+  <<"struct proc *p;">>,
+  <<"struct process *pr;">>,
+  <<"struct pdevinit *pdev;">>,
+  <<"extern struct pdevinit pdevinit[];">>,
+  <<"extern void disk_init(void);">>,
+]}.

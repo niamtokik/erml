@@ -1,0 +1,9 @@
+%%%===================================================================
+%%% A static list.
+%%%===================================================================
+{ul, [
+  {li, <<"In order to handle failure, you need two machines.">>},
+  {li, <<"Shared memory is evil.">>},
+  {li, <<"Erlang is like Meccano. Meccano is very good.">>},
+  {li, <<"Bad ideas in computer science and anywhere are sticky.">>}
+]}.

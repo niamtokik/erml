@@ -1,0 +1,7 @@
+%%%===================================================================
+%%% A simple quote using blockquote and cite tags.
+%%%===================================================================
+{blockquote, [
+  {p, <<"Four languages to learn: C, Prolog, Erlang, Javascript.">>},
+  {cite, <<"Joe Armstrong">>}
+]}.

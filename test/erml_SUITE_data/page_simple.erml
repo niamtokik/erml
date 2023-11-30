@@ -1,0 +1,53 @@
+%%%===================================================================
+%%% This is a simple template page containing Lorem Ipsum content.
+%%%===================================================================
+{html, [
+  {head, [
+    {title, <<"Lorem Ipsum">>}
+  ]},
+  {body, [
+    {h1, <<"Lorem Ipsum">>},
+    {h2, <<"Neque porro quisquam est qui dolorem ipsum quia dolor sit"
+           "amet, consectetur, adipisci velit...">>},
+    {p, <<"Lorem ipsum dolor sit amet, consectetur adipiscing"
+           "elit. Aenean vel lobortis augue, sit amet mollis"
+           "tortor. Etiam ante tortor, rutrum sit amet dolor vel,"
+           "maximus commodo lacus. Donec eu ex sed diam ullamcorper"
+           "facilisis. Integer felis quam, rhoncus nec fermentum vel,"
+           "aliquam eu libero. Donec lectus dui, mollis vitae elit sit"
+           "amet, consectetur placerat nibh. Maecenas sit amet elit eu"
+           "libero auctor volutpat ut sit amet metus. Nunc consequat"
+           "facilisis dolor, non scelerisque diam luctus eu. Nunc"
+           "bibendum lectus non nisi rhoncus convallis. Proin"
+           "dignissim, nulla at mattis venenatis, quam massa ornare"
+           "massa, dictum eleifend nisi sapien at quam. Donec lacinia"
+           "dapibus augue vel consectetur. Nulla facilisi. Mauris non"
+           "blandit lectus, imperdiet sollicitudin quam. Fusce semper"
+           "nisi eu enim convallis ullamcorper. Aenean velit arcu,"
+           "dictum ut arcu vitae, rutrum condimentum metus. Ut nulla"
+           "ante, ultricies et urna eu, hendrerit ullamcorper"
+           "massa. Vestibulum vestibulum volutpat tempus. ">>},
+    {p, <<"Pellentesque interdum augue eu blandit"
+          "molestie. Pellentesque iaculis mauris eget odio sagittis, a"
+          "sagittis tortor molestie. Cras vestibulum leo vitae lorem"
+          "feugiat, ac pretium tellus dictum. Integer tristique erat"
+          "lectus, pellentesque mollis tortor tincidunt non. Sed et"
+          "diam et dui dapibus egestas. Phasellus eu elementum lectus,"
+          "ac pretium enim. Donec tempor, ipsum sit amet rhoncus"
+          "rutrum, ante nibh volutpat nibh, eu consectetur mauris"
+          "metus id tellus. Donec a mattis ex. Quisque aliquet est non"
+          "erat porttitor, eget ultrices erat dignissim. Vestibulum"
+          "ante ipsum primis in faucibus orci luctus et ultrices"
+          "posuere cubilia curae;">>},
+    {p, <<"Nunc sodales urna tortor. Vestibulum dui sem, venenatis non"
+           "tellus vel, tristique tempor mauris. Mauris consectetur"
+           "mauris a nisl suscipit pretium. Fusce diam odio,"
+           "sollicitudin ac diam et, auctor gravida tellus. Vivamus est"
+           "nisl, venenatis sit amet accumsan ac, sagittis id"
+           "risus. Sed nec eros purus. Vestibulum vulputate nulla ac"
+           "pellentesque tempus. Cras vehicula eros eu nulla mollis"
+           "ornare. Pellentesque et tellus viverra, egestas diam et,"
+           "iaculis dolor. Quisque facilisis turpis quis nibh bibendum"
+           "posuere.">>}
+  ]}
+]}.

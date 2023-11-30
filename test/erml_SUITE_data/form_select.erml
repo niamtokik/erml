@@ -1,0 +1,10 @@
+%%%===================================================================
+%%% A form with select/option.
+%%%===================================================================
+{'div', #{class => "form-group"}, [
+  {select, #{class => "form-select"}, [
+    {option, [<<"Joe Armstrong">>]},
+    {option, [<<"Robert Virding">>]},
+    {option, [<<"Mike Williams">>]}
+  ]}
+]}.

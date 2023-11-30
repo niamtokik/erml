@@ -1,0 +1,19 @@
+%%%===================================================================
+%%% A more complex page calling other tag.
+%%%===================================================================
+{html, [
+  {head, [
+    {title, <<"Lorem Ipsum">>}
+  ]},
+  {body, [
+    % calling a module
+    {'div', #{id => "module"}, [
+      {apply, {gabarit_test_module, random_paragraph, []}}
+    ]},
+    % include a raw text
+    % including a template with variable
+    {'div', #{id => "template"}, [
+      {include_template, "quote_template", #{quote => <<"test">>, author => <<"test">>}}
+    ]}
+  ]}
+]}.
