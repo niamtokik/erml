@@ -126,10 +126,8 @@ init(Args) ->
 % create an infinite loop, that's why the state changes and is tagged
 % with `variable_loop' atom.
 %---------------------------------------------------------------------
-tag({Variable}, #{variables := Variables} = Opts, State) ->
+tag({Variable}, Opts, State) ->
     tag_variable(Variable, Opts, State);
-tag({_Variable}, Opts, State) ->
-    {stop, {not_configured, variables, Opts}, State};
 
 %--------------------------------------------------------------------
 % explicit content with specific options
@@ -167,6 +165,17 @@ tag({include_media, Path} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
 tag({include_media, Path, LocalOpts} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
+
+%--------------------------------------------------------------------
+% call a module to create the content of the tag. The module should
+% have `init/2' function exposed and should return a valid tag.
+%--------------------------------------------------------------------
+tag({include_callback, Module}, Opts, State) 
+  when is_atom(Module) ->
+    try apply(Module, init, [Opts, State])
+    catch
+        E:R:S -> {stop, {include_callback, {E,R,S}, State}}
+    end;
 
 %---------------------------------------------------------------------
 % call a standard behaviors and integrate their answer in the
@@ -366,28 +375,28 @@ tag(Unsupported, Opts, State) ->
 tag_variable(Variable, Opts, #{variable_recursion := Counter} = State) 
   when Counter>100 ->
     {stop, {variable_recursion, Variable}, State};
+tag_variable(Variable, Opts, #{variable_recursion := Counter} = State) 
+  when Counter<0 ->
+    {stop, {variable_recursion, Variable}, State};
 tag_variable(Variable, #{variables := Variables} = Opts, State) ->
     Counter = maps:get(variable_recursion, State, 0),
     try #{Variable := Value} = Variables of
-        %% _ when is_binary(Value) -> 
-        %%     content(Value, Opts, State);
-        %% _ when is_atom(Value) -> 
-        %%     content(Value, Opts, State);
-        %% _ when is_integer(Value) -> 
-        %%     content(Value, Opts, State);
-        %% _ when is_float(Value) -> 
-        %%     content(Value, Opts, State);
+        _ when is_binary(Value) -> 
+            content(Value, Opts, State);
+        _ when is_atom(Value) -> 
+            content(Value, Opts, State);
+        _ when is_integer(Value) -> 
+            content(Value, Opts, State);
+        _ when is_float(Value) -> 
+            content(Value, Opts, State);
         _  -> 
-            case tag(Value, Opts, State#{variable_recursion => Counter+1}) of
-                {ok, Begin, End, Content, NewState} ->
-                    {ok, Begin, End, Content, NewState};
-                Elsewise ->
-                    Elsewise
-            end;
-        _ -> {stop, {unsupported, Variable}, State}
+            tag(Value, Opts#{ variables => maps:remove(Variable, Variables)}
+               ,State#{variable_recursion => Counter})
     catch
         _:_ -> {stop, {not_found, Variable}, State}
-    end.
+    end;
+tag_variable(_Variable, Opts, State) ->
+    {stop, {not_configured, variables, Opts}, State}.
 
 %%--------------------------------------------------------------------
 %%

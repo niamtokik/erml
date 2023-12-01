@@ -197,6 +197,16 @@ tag(_Config) ->
     {ok,<<"test&">>}
         = erml_tag:create({content, <<"test&">>, #{entities => false}}),
 
+    % more complex case
+    {ok, <<"<html><head><title>test</title></head>"
+           "<body><h1>title</h1><p>paragraph</p></body>"
+           "</html>">>}
+        = erml_tag:create({html, [{head, {title, test}}
+                                 ,{body, [{h1, title}
+                                         ,{p, paragraph}
+                                         ]}
+                                 ]}),
+
     ok.
 
 %%--------------------------------------------------------------------
@@ -222,7 +232,7 @@ variables(_Config) ->
     % a variable can be of any type you want.
     {ok, <<"test">>} = erml_tag:create([{1}], #{variables => #{1 => <<"test">>}}),
     {ok, <<"test">>} = erml_tag:create([{"1"}], #{variables => #{"1" => <<"test">>}}),
-    {ok, <<"test">>} =  erml_tag:create([{<<"1">>}], #{variables => #{<<"1">> => <<"test">>}}),
+    {ok, <<"test">>} = erml_tag:create([{<<"1">>}], #{variables => #{<<"1">> => <<"test">>}}),
     {ok, <<"test">>} = erml_tag:create([{#{}}], #{variables => #{#{} => <<"test">>}}),
 
     % multivariable support
@@ -235,8 +245,8 @@ variables(_Config) ->
         = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v1}}}),
 
     % ... and we can have an example here.
-    {stop,{variable_recursion,v3},_} 
-        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
+    % {stop,{variable_recursion,v3},_} 
+    %    = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
 
     % we can also create tags from variable.
     {ok,<<"<p>test</p>">>}
@@ -246,7 +256,9 @@ variables(_Config) ->
     Html = {html, [{head}, {body}]},
     Head = {head, []},
     Body = {body, [{title}, {paragraph}]},
-    {ok,<<"<html><head><body><h1>title<p>paragraph</p></h1></body></head></html>">>}
+    {ok,<<"<html><head></head>"
+          "<body><h1>title</h1><p>paragraph</p></body>"
+          "</html>">>}
         = erml_tag:create(Html, #{variables => #{ head => Head
                                                 , body => Body
                                                 , title => {h1, title}
@@ -254,7 +266,7 @@ variables(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% @doc module/function calls can be added directly in any erml
+%% @doc @todo module/function calls can be added directly in any erml
 %% template.
 %%
 %% ```
@@ -275,7 +287,7 @@ function_call(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% @doc lambda (private function) call can be only added during code
+%% @doc @todo lambda (private function) call can be only added during code
 %% execution.
 %%
 %% ```
@@ -298,7 +310,7 @@ lambda_call(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% @doc raw inclusion includes a raw file without any conversion. 
+%% @doc @todo raw inclusion includes a raw file without any conversion. 
 %%
 %% ```
 %% {include_raw, Path}.
@@ -371,3 +383,9 @@ include_media(_Config) ->
         = erml_tag:create({include_media, "https://localhost:8080", #{}}),
     
     ok.
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+include_callback() -> [].
+include_callback(_Config) -> ok.

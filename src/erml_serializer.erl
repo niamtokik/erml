@@ -5,6 +5,7 @@
 -module(erml_serializer).
 -export([compile/3, compile/4]).
 -export([flatten/2]).
+-include_lib("kernel/include/logger.hrl").
 
 %%--------------------------------------------------------------------
 %% @doc serialize an erml template.
@@ -24,6 +25,7 @@ compile(Module, Args, Data, Opts) ->
 %%
 %%--------------------------------------------------------------------
 init_loop(Module, Args, Data, Opts) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, init_loop, [Module, Args, Data, Opts]}]),
     try Module:init(Args) of
         {ok, State} ->
             loop(Module, Data, Opts, State, [], [])
@@ -57,10 +59,11 @@ flatten([H|T], Buffer)
 %%
 %%--------------------------------------------------------------------
 loop(Module, Data, Opts, State, LBuffer, RBuffer) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, loop, [Module, Data, Opts, State, LBuffer, RBuffer]}]),
     case elements(Module, Data, Opts, State, LBuffer, RBuffer) of
-        {ok, L, R, _State} ->
-            List = lists:flatten([L,R]),
-            Flatten = flatten(List, <<>>),
+        {ok, Buffer, _State} ->
+            List = lists:flatten(Buffer),
+            Flatten = flatten(List, <<>>),            
             {ok, Flatten};
         Elsewise ->
             Elsewise
@@ -69,23 +72,32 @@ loop(Module, Data, Opts, State, LBuffer, RBuffer) ->
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
+elements(Module, [], Opts, State, [], RB) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, elements, [Module, [], Opts, State, [], RB]}]),
+    {ok, RB, State};
+elements(Module, [], Opts, State, LB, []) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, elements, [Module, [], Opts, State, LB, []]}]),
+    {ok, LB, State};
 elements(Module, [], Opts, State, LB, RB) ->
-    {ok, LB, RB, State};
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, elements, [Module, [], Opts, State, LB, RB]}]),
+    {ok, [LB|RB], State};
 elements(Module, [Element|Elements], Opts, State, LB, RB) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, elements, [Module, [Element|Elements], Opts, State, LB, RB]}]),
     case element(Module, Element, Opts, State) of
         {ok, Content, NewState} ->
-            elements(Module, Elements, Opts, NewState, [LB, Content], RB);
+            elements(Module, Elements, Opts, NewState, [LB, Content], [RB]);
         {ok, Begin, End, NewState} ->
-            elements(Module, Elements, Opts, NewState, [LB, Begin], [End,RB]);
+            elements(Module, Elements, Opts, NewState, [LB, Begin, End], [RB]);
         Elsewise ->
             Elsewise
     end;
 elements(Module, Element, Opts, State, LB, RB) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, elements, [Module, Element, Opts, State, LB, RB]}]),
     case element(Module, Element, Opts, State) of
         {ok, Content, NewState} ->
-            {ok, [LB, Content], RB, NewState};
+            {ok, [LB,Content,RB], NewState};
         {ok, Begin, End, NewState} ->
-            {ok, [LB, Begin], [End,RB], NewState};
+            {ok, [LB,Begin,End,RB], NewState};
         Elsewise ->
             Elsewise
     end.
@@ -94,11 +106,12 @@ elements(Module, Element, Opts, State, LB, RB) ->
 %%
 %%--------------------------------------------------------------------
 element(Module, Element, Opts, State) ->
+    ?LOG_DEBUG("~p", [{self(), ?MODULE, element, [Module, Element, Opts, State]}]),
     case Module:tag(Element, Opts, State) of
         {ok, Content, NewState} ->
             {ok, Content, NewState};
         {ok, Begin, End, NewState} ->
-            {ok, Begin, End, NewState};
+            {ok, [Begin, End], NewState};
         {ok, Begin, End, Inner, NewState} ->
             elements(Module, Inner, Opts, NewState, [Begin], [End]);
         Elsewise ->
