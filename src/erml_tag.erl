@@ -97,7 +97,7 @@
 %%
 %%--------------------------------------------------------------------
 create(Data) -> create(Data, #{}).
-create(Data, Opts) -> erml_serializer:compile(?MODULE, Opts, Data).
+create(Data, Opts) -> erml_serializer:compile(?MODULE, [], Data, Opts).
 
 %%--------------------------------------------------------------------
 %%
@@ -107,7 +107,7 @@ create(Data, Opts) -> erml_serializer:compile(?MODULE, Opts, Data).
       Return :: term().
 
 init(Args) ->
-    {ok, []}.
+    {ok, #{}}.
 
 %%--------------------------------------------------------------------
 %% @doc main function used to generate html using erml tags.
@@ -121,10 +121,15 @@ init(Args) ->
 
 %---------------------------------------------------------------------
 % add variable support (template only). A variable can be any Erlang
-% term but MUST be present in variables key from Opts
+% term but MUST be present in variables key from Opts. When using a
+% variable as template, one can't create another variable, it could
+% create an infinite loop, that's why the state changes and is tagged
+% with `variable_loop' atom.
 %---------------------------------------------------------------------
-tag({Variable} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
+tag({Variable}, #{variables := Variables} = Opts, State) ->
+    tag_variable(Variable, Opts, State);
+tag({_Variable}, Opts, State) ->
+    {stop, {not_configured, variables, Opts}, State};
 
 %--------------------------------------------------------------------
 % explicit content with specific options
@@ -140,10 +145,9 @@ tag({content, Content, LocalOpts} = Tag, Opts, State) ->
 % to insert a script or stylecheat.
 %---------------------------------------------------------------------
 tag({include_raw, Path}, Opts, State) ->
-    tag({include_raw, Path, Opts}, Opts, State});
+    tag({include_raw, Path, Opts}, Opts, State);
 tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
     Options = maps:merge(Opts, LocalOpts),
-    
     {stop, {todo, Tag, Opts}, State};
 
 %---------------------------------------------------------------------
@@ -154,7 +158,6 @@ tag({include_template, Path} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
 tag({include_template, Path, LocalOpts} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
-
 
 %---------------------------------------------------------------------
 % add template include support. A template is an erml file or a list
@@ -356,6 +359,35 @@ tag(Text, Opts, State)
 %---------------------------------------------------------------------
 tag(Unsupported, Opts, State) ->
     {stop, {todo, Unsupported, Opts}, State}.
+
+%%--------------------------------------------------------------------
+%% internal function to deal with variable.
+%%--------------------------------------------------------------------
+tag_variable(Variable, Opts, #{variable_recursion := Counter} = State) 
+  when Counter>100 ->
+    {stop, {variable_recursion, Variable}, State};
+tag_variable(Variable, #{variables := Variables} = Opts, State) ->
+    Counter = maps:get(variable_recursion, State, 0),
+    try #{Variable := Value} = Variables of
+        %% _ when is_binary(Value) -> 
+        %%     content(Value, Opts, State);
+        %% _ when is_atom(Value) -> 
+        %%     content(Value, Opts, State);
+        %% _ when is_integer(Value) -> 
+        %%     content(Value, Opts, State);
+        %% _ when is_float(Value) -> 
+        %%     content(Value, Opts, State);
+        _  -> 
+            case tag(Value, Opts, State#{variable_recursion => Counter+1}) of
+                {ok, Begin, End, Content, NewState} ->
+                    {ok, Begin, End, Content, NewState};
+                Elsewise ->
+                    Elsewise
+            end;
+        _ -> {stop, {unsupported, Variable}, State}
+    catch
+        _:_ -> {stop, {not_found, Variable}, State}
+    end.
 
 %%--------------------------------------------------------------------
 %%

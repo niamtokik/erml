@@ -7,7 +7,9 @@
 -export([flatten/2]).
 
 %%--------------------------------------------------------------------
+%% @doc serialize an erml template.
 %%
+%% @end
 %%--------------------------------------------------------------------
 compile(Module, Args, Data) ->
     compile(Module, Args, Data, #{}).

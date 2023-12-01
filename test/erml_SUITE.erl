@@ -99,7 +99,7 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() -> 
-    [tag].
+    [tag, variables].
 
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
@@ -197,6 +197,60 @@ tag(_Config) ->
     {ok,<<"test&">>}
         = erml_tag:create({content, <<"test&">>, #{entities => false}}),
 
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+variables() -> [].
+variables(_Config) ->
+    % serializer stop when a variable is present and variables key is
+    % not set
+    {stop,{not_configured,variables,#{}},#{}}
+        = erml_tag:create({v}, #{}),
+
+    % if the variable is not found, the serializer stop
+    {stop,{not_found,v},#{}}
+        = erml_tag:create({v}, #{variables => #{test=>1}}),
+
+    % simple variable usages
+    {ok, <<"1">>} = erml_tag:create({v}, #{variables => #{v=>1}}),
+    {ok, <<"test">>} = erml_tag:create({v}, #{variables => #{v=><<"test">>}}),
+    {ok, <<"test">>} = erml_tag:create({v}, #{variables => #{v=>test}}),
+
+    % a variable can be of any type you want.
+    {ok, <<"test">>} = erml_tag:create([{1}], #{variables => #{1 => <<"test">>}}),
+    {ok, <<"test">>} = erml_tag:create([{"1"}], #{variables => #{"1" => <<"test">>}}),
+    {ok, <<"test">>} =  erml_tag:create([{<<"1">>}], #{variables => #{<<"1">> => <<"test">>}}),
+    {ok, <<"test">>} = erml_tag:create([{#{}}], #{variables => #{#{} => <<"test">>}}),
+
+    % multivariable support
+    {ok,<<"123">>} 
+        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>1, v2=>2, v3=>3}}),
+
+    % yes, we can include a variable into another variable, loop
+    % protection exist thought...
+    {ok, <<"aba">>}
+        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v1}}}),
+
+    % ... and we can have an example here.
+    {stop,{variable_recursion,v3},_} 
+        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
+
+    % we can also create tags from variable.
+    {ok,<<"<p>test</p>">>}
+        = erml_tag:create([{tag}], #{variables => #{tag => {p, [<<"test">>]}}}),
+        
+    % and so a full page.
+    Html = {html, [{head}, {body}]},
+    Head = {head, []},
+    Body = {body, [{title}, {paragraph}]},
+    {ok,<<"<html><head><body><h1>title<p>paragraph</p></h1></body></head></html>">>}
+        = erml_tag:create(Html, #{variables => #{ head => Head
+                                                , body => Body
+                                                , title => {h1, title}
+                                                , paragraph => {p, paragraph}}}),
     ok.
 
 %%--------------------------------------------------------------------
