@@ -200,7 +200,120 @@ tag(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
+%% @doc module/function calls can be added directly in any erml
+%% template.
 %%
+%% ```
+%% {apply, Module, Function, Arguments}.
+%% {apply, Module, Function, Arguments, Opts}.
+%% '''
+%%
+%% @end
 %%--------------------------------------------------------------------
-simple_generator() ->
-    {ok, <<"test">>}.
+function_call() -> [].
+function_call(_Config) ->
+    {ok, <<"test">>} 
+        = erml:create({apply, erml_SUITE, echo, [<<"test">>]}),
+
+    {ok, <<"test">>} 
+        = erml:create({apply, erml_SUITE, echo, [<<"test">>], #{}}),
+
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc lambda (private function) call can be only added during code
+%% execution.
+%%
+%% ```
+%% {apply, Fun}.
+%% {apply, Fun, Opts}.
+%% '''
+%%
+%% @end
+%%--------------------------------------------------------------------
+lambda_call() -> [].
+lambda_call(_Config) ->
+    Fun_001 = fun() -> {ok, <<"test">>} end,
+    {ok, <<"test">>} = erml:create({apply, Fun_001}),
+
+    Fun_002 = fun(_Opts) -> {ok, <<"test">>} end,
+    {ok, <<"test">>} = erml:create({apply, Fun_001}),
+
+    Fun_003 = fun(_Opts) -> {ok, <<"test">>} end,
+    {ok, <<"test">>} = erml:create({apply, Fun_001, #{}}),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc raw inclusion includes a raw file without any conversion. 
+%%
+%% ```
+%% {include_raw, Path}.
+%% {include_raw, Path, Opts}.
+%% '''
+%%
+%% @end
+%%--------------------------------------------------------------------
+include_raw() -> [].
+include_raw(_Config) ->
+    {ok, <<"test">>} = erml:create({include_raw, "raw.txt"}),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc
+%%
+%% ```
+%% {include_template, Path}.
+%% {include_template, Path, Opts}.
+%% '''
+%%
+%% @end
+%%--------------------------------------------------------------------
+include_template() -> [].
+include_template(_Config) ->
+    {ok, <<"<p>test</p>">>} 
+        = erml:create({include_template, "paragraph.erml"}),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc Media inclusion is an important feature to help developers to
+%% deal with multimedia content without having to deal with complex
+%% code.
+%%
+%% ```
+%% {include_media, Path}.
+%% {include_media, Path, Opts}.
+%% {include_media, Path, Opts, Attributes}.
+%% '''
+%% @end
+%%--------------------------------------------------------------------
+include_media() -> [].
+include_media(_Config) ->
+    % A special include form dealing with media.
+    % an HTML page is directly added without transformation
+    {ok, <<"<p>data</p>">>} 
+        = erml_tag:create({include_media, "test.html", #{}}),
+
+    % an image is converted as base64 and inserted in an <img> tag 
+    {ok, <<"<img src=\"...\">">>} 
+        = erml_tag:create({include_media, "test.jpg", #{}}),
+
+    % an audio file will produce an audio tag
+    {ok, <<"<audio controls src=\"...\"></audio>">>}
+        = erml_tag:create({include_media, "test.mp3", #{}}),
+
+    % a video file should also act in the same way
+    {ok, <<"<video controls><source src=\"...\"></video>">>}
+        = erml_tag:create({include_media, "test.mp4", #{}}),
+    
+    % An enforced type can be supplied to be sure included data is the
+    % correct one used.
+    {ok, <<"<audio controls src=\"...\"></audio>">>}
+        = erml_tag:create({include_media, {audio, "test.mp4"}, #{}}),
+
+    % an external url can be used to include external media. A cache
+    % system should probably be used and a support for selecting
+    % different kind of client could also be great.
+    {ok, <<"<img src=\"...\"">>}
+        = erml_tag:create({include_media, "https://localhost:8080", #{}}),
+    
+    ok.

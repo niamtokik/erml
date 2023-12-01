@@ -139,9 +139,11 @@ tag({content, Content, LocalOpts} = Tag, Opts, State) ->
 % from Opts but can also use local parameters, useful if someone needs
 % to insert a script or stylecheat.
 %---------------------------------------------------------------------
-tag({include_raw, Path} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
+tag({include_raw, Path}, Opts, State) ->
+    tag({include_raw, Path, Opts}, Opts, State});
 tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
+    Options = maps:merge(Opts, LocalOpts),
+    
     {stop, {todo, Tag, Opts}, State};
 
 %---------------------------------------------------------------------
@@ -151,6 +153,16 @@ tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
 tag({include_template, Path} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
 tag({include_template, Path, LocalOpts} = Tag, Opts, State) ->
+    {stop, {todo, Tag, Opts}, State};
+
+
+%---------------------------------------------------------------------
+% add template include support. A template is an erml file or a list
+% of term containing erml html tags.
+%---------------------------------------------------------------------
+tag({include_media, Path} = Tag, Opts, State) ->
+    {stop, {todo, Tag, Opts}, State};
+tag({include_media, Path, LocalOpts} = Tag, Opts, State) ->
     {stop, {todo, Tag, Opts}, State};
 
 %---------------------------------------------------------------------
