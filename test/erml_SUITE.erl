@@ -343,7 +343,10 @@ include_template() -> [].
 include_template(Config) ->
     DataDir = ?config(data_dir,Config),
     Opts = #{ root => DataDir },
-    {ok, [<<>>, {html, _}]} = erml_tag:create({include_template, "page_simple.erml"}, Opts),
+    {ok, <<"<html><head><title>Lorem Ipsum</title></head><body>", _/binary>>} 
+        = erml_tag:create({include_template, "page_simple.erml"}, Opts),
+    {ok, <<"<ul><li>In order to handle failure", _/binary>>} 
+        = erml_tag:create({include_template, "list_simple.erml"}, Opts),
     {stop, _, _} = erml_tag:create({include_template, "../page_simple.erml"}, Opts),
     {stop, _, _} = erml_tag:create({include_template, "./test../page_simple.erml"}, Opts),
     ok.

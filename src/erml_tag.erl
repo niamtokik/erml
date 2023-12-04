@@ -163,7 +163,7 @@ tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
 tag({include_template, Path} = Tag, #{ root := Root } = Opts, State) ->
     case include_template(Path, Opts) of
         {ok, Template} ->
-            {ok, Template, State};
+            create(Template, Opts);
         {error, Reason} ->
             {stop, {error, Reason, filename:join(Root, Path)}, State}
     end;
