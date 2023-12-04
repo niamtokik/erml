@@ -38,20 +38,20 @@ init_loop(Module, Args, Data, Opts) ->
 %% custom function to flatten an improper list containing binaries and
 %% other terms.
 %%--------------------------------------------------------------------
-flatten([], Buffer) 
+flatten([], Buffer)
   when is_binary(Buffer) -> Buffer;
 flatten([], Buffer)
   when is_list(Buffer) -> lists:reverse(Buffer);
-flatten([H|T], Buffer) 
+flatten([H|T], Buffer)
   when is_binary(H), is_binary(Buffer) ->
     flatten(T, <<Buffer/binary, H/binary>>);
-flatten([H|T], Buffer) 
+flatten([H|T], Buffer)
   when is_binary(Buffer) ->
     flatten(T, [H|[Buffer]]);
-flatten([H|T], [Last|Rest]) 
+flatten([H|T], [Last|Rest])
   when is_binary(Last), is_binary(H) ->
     flatten(T, [<<Last/binary, H/binary>>|Rest]);
-flatten([H|T], Buffer) 
+flatten([H|T], Buffer)
   when is_list(Buffer) ->
     flatten(T, [H|Buffer]).
 
@@ -63,7 +63,7 @@ loop(Module, Data, Opts, State, LBuffer, RBuffer) ->
     case elements(Module, Data, Opts, State, LBuffer, RBuffer) of
         {ok, Buffer, _State} ->
             List = lists:flatten(Buffer),
-            Flatten = flatten(List, <<>>),            
+            Flatten = flatten(List, <<>>),
             {ok, Flatten};
         Elsewise ->
             Elsewise

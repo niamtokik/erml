@@ -98,8 +98,8 @@ groups() ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
-all() -> 
-    [tag, variables].
+all() ->
+    [tag, variables, include_raw, include_template].
 
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
@@ -118,23 +118,23 @@ tag() ->
 %% Comment = term()
 %% @end
 %%--------------------------------------------------------------------
-tag(_Config) -> 
+tag(_Config) ->
     % empty document
     {ok, <<>>} = erml_tag:create([]),
     {ok, <<>>} = erml_tag:create(<<>>),
-    
+
     % simple tag without attributes
     {ok, <<"<html></html>">>} = erml_tag:create({html, []}),
     {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, []}),
     {ok, <<"<html></html>">>} = erml_tag:create({"html", []}),
-    {ok, <<"<html><body></body></html>">>} 
+    {ok, <<"<html><body></body></html>">>}
         = erml_tag:create({html, {body, []}}),
 
     % simple tag with attributes
     {ok, <<"<html></html>">>} = erml_tag:create({html, #{}, []}),
     {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, #{}, []}),
     {ok, <<"<html></html>">>} = erml_tag:create({"html", #{}, []}),
-    {ok, <<"<html><body></body></html>">>} 
+    {ok, <<"<html><body></body></html>">>}
         = erml_tag:create({html, #{}, {body, #{}, []}}),
 
     % simple tag with attributes support.
@@ -160,7 +160,7 @@ tag(_Config) ->
     % dynamic template (gen_server call by default)
     {ok, [ <<"<html><body>">>
          , {gen_server,call,server,paragraph,1000}
-         , <<"</body></html>">> 
+         , <<"</body></html>">>
          ]
     } = erml_tag:create({html, {body, {call, server, paragraph}}}),
 
@@ -180,7 +180,7 @@ tag(_Config) ->
 
     % special tags
     {ok, <<"<pre></pre>">>} = erml_tag:create({pre, []}),
-    {ok, <<"<pre>test\ndata</pre>">>} 
+    {ok, <<"<pre>test\ndata</pre>">>}
         = erml_tag:create({pre, ["test", "data"]}),
     {ok, <<"<pre><code>test\ndata</code></pre>">>}
         = erml_tag:create({pre, {code, ["test", "data"]}}),
@@ -190,7 +190,7 @@ tag(_Config) ->
         = erml_tag:create({content, "test"}),
     {ok, <<"test&amp;">>}
         = erml_tag:create({content, "test&"}),
-    {ok, <<"test&apos;">>} 
+    {ok, <<"test&apos;">>}
         = erml_tag:create({content, <<"test'">>}),
     {ok,<<"test">>}
         = erml_tag:create({content, test}),
@@ -236,7 +236,7 @@ variables(_Config) ->
     {ok, <<"test">>} = erml_tag:create([{#{}}], #{variables => #{#{} => <<"test">>}}),
 
     % multivariable support
-    {ok,<<"123">>} 
+    {ok,<<"123">>}
         = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>1, v2=>2, v3=>3}}),
 
     % yes, we can include a variable into another variable, loop
@@ -245,13 +245,13 @@ variables(_Config) ->
         = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v1}}}),
 
     % ... and we can have an example here.
-    % {stop,{variable_recursion,v3},_} 
+    % {stop,{variable_recursion,v3},_}
     %    = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
 
     % we can also create tags from variable.
     {ok,<<"<p>test</p>">>}
         = erml_tag:create([{tag}], #{variables => #{tag => {p, [<<"test">>]}}}),
-        
+
     % and so a full page.
     Html = {html, [{head}, {body}]},
     Head = {head, []},
@@ -278,10 +278,10 @@ variables(_Config) ->
 %%--------------------------------------------------------------------
 function_call() -> [].
 function_call(_Config) ->
-    {ok, <<"test">>} 
+    {ok, <<"test">>}
         = erml:create({apply, erml_SUITE, echo, [<<"test">>]}),
 
-    {ok, <<"test">>} 
+    {ok, <<"test">>}
         = erml:create({apply, erml_SUITE, echo, [<<"test">>], #{}}),
 
     ok.
@@ -310,7 +310,7 @@ lambda_call(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% @doc @todo raw inclusion includes a raw file without any conversion. 
+%% @doc @todo raw inclusion includes a raw file without any conversion.
 %%
 %% ```
 %% {include_raw, Path}.
@@ -320,8 +320,13 @@ lambda_call(_Config) ->
 %% @end
 %%--------------------------------------------------------------------
 include_raw() -> [].
-include_raw(_Config) ->
-    {ok, <<"test">>} = erml:create({include_raw, "raw.txt"}),
+include_raw(Config) ->
+    DataDir = ?config(data_dir,Config),
+    Opts = #{ root => DataDir },
+    {ok, <<"Lorem Ipsum\n\n", _/binary>>} = erml_tag:create({include_raw, "raw_ascii.txt"}, Opts),
+    {stop, _, _} = erml_tag:create({include_raw, "../raw.txt"}, Opts),
+    {stop, _, _} = erml_tag:create({include_raw, "../../raw.txt"}, Opts),
+    {stop, _, _} = erml_tag:create({include_raw, "./test/../../raw.txt"}, Opts),
     ok.
 
 %%--------------------------------------------------------------------
@@ -335,9 +340,12 @@ include_raw(_Config) ->
 %% @end
 %%--------------------------------------------------------------------
 include_template() -> [].
-include_template(_Config) ->
-    {ok, <<"<p>test</p>">>} 
-        = erml:create({include_template, "paragraph.erml"}),
+include_template(Config) ->
+    DataDir = ?config(data_dir,Config),
+    Opts = #{ root => DataDir },
+    {ok, [<<>>, {html, _}]} = erml_tag:create({include_template, "page_simple.erml"}, Opts),
+    {stop, _, _} = erml_tag:create({include_template, "../page_simple.erml"}, Opts),
+    {stop, _, _} = erml_tag:create({include_template, "./test../page_simple.erml"}, Opts),
     ok.
 
 %%--------------------------------------------------------------------
@@ -356,11 +364,11 @@ include_media() -> [].
 include_media(_Config) ->
     % A special include form dealing with media.
     % an HTML page is directly added without transformation
-    {ok, <<"<p>data</p>">>} 
+    {ok, <<"<p>data</p>">>}
         = erml_tag:create({include_media, "test.html", #{}}),
 
-    % an image is converted as base64 and inserted in an <img> tag 
-    {ok, <<"<img src=\"...\">">>} 
+    % an image is converted as base64 and inserted in an <img> tag
+    {ok, <<"<img src=\"...\">">>}
         = erml_tag:create({include_media, "test.jpg", #{}}),
 
     % an audio file will produce an audio tag
@@ -370,7 +378,7 @@ include_media(_Config) ->
     % a video file should also act in the same way
     {ok, <<"<video controls><source src=\"...\"></video>">>}
         = erml_tag:create({include_media, "test.mp4", #{}}),
-    
+
     % An enforced type can be supplied to be sure included data is the
     % correct one used.
     {ok, <<"<audio controls src=\"...\"></audio>">>}
@@ -381,7 +389,7 @@ include_media(_Config) ->
     % different kind of client could also be great.
     {ok, <<"<img src=\"...\"">>}
         = erml_tag:create({include_media, "https://localhost:8080", #{}}),
-    
+
     ok.
 
 %%--------------------------------------------------------------------

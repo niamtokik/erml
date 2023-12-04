@@ -144,33 +144,46 @@ tag({content, Content, LocalOpts} = Tag, Opts, State) ->
 %---------------------------------------------------------------------
 tag({include_raw, Path}, Opts, State) ->
     tag({include_raw, Path, Opts}, Opts, State);
+tag({include_raw, Path, LocalOpts} = Tag, #{root := Root} = Opts, State) ->
+    CleanRoot = maps:remove(root, LocalOpts),
+    CleanOpts = maps:merge(Opts, CleanRoot),
+    case include_raw(Path, CleanOpts) of
+        {ok, Content} ->
+            {ok, Content, State};
+        {error, Reason} ->
+            {stop, {error, Reason, filename:join(Root, Path)}, State}
+    end;
 tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
-    Options = maps:merge(Opts, LocalOpts),
-    {stop, {todo, Tag, Opts}, State};
+    {stop, {missing_root, Opts}, State};
 
 %---------------------------------------------------------------------
 % add template include support. A template is an erml file or a list
 % of term containing erml html tags.
 %---------------------------------------------------------------------
-tag({include_template, Path} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
+tag({include_template, Path} = Tag, #{ root := Root } = Opts, State) ->
+    case include_template(Path, Opts) of
+        {ok, Template} ->
+            {ok, Template, State};
+        {error, Reason} ->
+            {stop, {error, Reason, filename:join(Root, Path)}, State}
+    end;
 tag({include_template, Path, LocalOpts} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
+    {stop, {missing_root, Opts}, State};
 
 %---------------------------------------------------------------------
 % add template include support. A template is an erml file or a list
 % of term containing erml html tags.
 %---------------------------------------------------------------------
-tag({include_media, Path} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
-tag({include_media, Path, LocalOpts} = Tag, Opts, State) ->
-    {stop, {todo, Tag, Opts}, State};
+% tag({include_media, Path} = Tag, Opts, State) ->
+%     {stop, {todo, Tag, Opts}, State};
+% tag({include_media, Path, LocalOpts} = Tag, Opts, State) ->
+%     {stop, {todo, Tag, Opts}, State};
 
 %--------------------------------------------------------------------
 % call a module to create the content of the tag. The module should
 % have `init/2' function exposed and should return a valid tag.
 %--------------------------------------------------------------------
-tag({include_callback, Module}, Opts, State) 
+tag({include_callback, Module}, Opts, State)
   when is_atom(Module) ->
     try apply(Module, init, [Opts, State])
     catch
@@ -180,7 +193,7 @@ tag({include_callback, Module}, Opts, State)
 %---------------------------------------------------------------------
 % call a standard behaviors and integrate their answer in the
 % template. this will create a dynamic template. This part of the code
-% is managed by the generator or the final renderer. 
+% is managed by the generator or the final renderer.
 %---------------------------------------------------------------------
 % default call  to gen_server
 tag({call, Pid, Message}, Opts, State) ->
@@ -205,7 +218,7 @@ tag({gen_statem, call, Pid, Message, Timeout} = Call, Opts, State) ->
 % page. Every time the page is called, MFA defined is called and then
 % generate a new page.
 %---------------------------------------------------------------------
-tag({apply, Module, Function, Arguments}, Opts, State) 
+tag({apply, Module, Function, Arguments}, Opts, State)
   when is_atom(Module), is_atom(Function), is_list(Arguments) ->
     try apply(Module, Function, Arguments) of
         {ok, Result} when is_binary(Result) ->
@@ -217,7 +230,7 @@ tag({apply, Module, Function, Arguments}, Opts, State)
 %---------------------------------------------------------------------
 % add local function support (helper) to execute on the same module.
 %---------------------------------------------------------------------
-tag({apply, Function, Arguments}, Opts, State) 
+tag({apply, Function, Arguments}, Opts, State)
   when is_atom(Function), is_list(Arguments) ->
     try Function(Arguments) of
         {ok, Result} when is_binary(Result) ->
@@ -281,7 +294,7 @@ tag({<<"code">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
   when is_list(Content), is_binary(Binary) ->
     Result = join(Content, <<"\n">>),
     tag({<<"code">>, Attributes, Result}, Opts, State);
-tag({<<"code">>, Attributes, Content}, Opts, State) 
+tag({<<"code">>, Attributes, Content}, Opts, State)
   when is_binary(Content) ->
     Begin = bracket(<<"code">>, <<>>),
     End = bracket_end(<<"code">>),
@@ -299,7 +312,7 @@ tag({<<"pre">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
   when is_list(Content), is_binary(Binary) ->
     Result = join(Content, <<"\n">>),
     tag({<<"pre">>, Attributes, Result}, Opts, State);
-tag({<<"pre">>, Attributes, Content}, Opts, State) 
+tag({<<"pre">>, Attributes, Content}, Opts, State)
   when is_binary(Content) ->
     Begin = bracket(<<"pre">>, <<>>),
     End = bracket_end(<<"pre">>),
@@ -359,7 +372,7 @@ tag({Tag, Attributes, Content}, Opts, State)
 % protected and encoded with html entities.
 %--------------------------------------------------------------------
 tag(Text, Opts, State)
-  when is_binary(Text); is_atom(Text); 
+  when is_binary(Text); is_atom(Text);
        is_integer(Text); is_float(Text) ->
     content(Text, Opts, State);
 
@@ -372,24 +385,24 @@ tag(Unsupported, Opts, State) ->
 %%--------------------------------------------------------------------
 %% internal function to deal with variable.
 %%--------------------------------------------------------------------
-tag_variable(Variable, Opts, #{variable_recursion := Counter} = State) 
+tag_variable(Variable, Opts, #{variable_recursion := Counter} = State)
   when Counter>100 ->
     {stop, {variable_recursion, Variable}, State};
-tag_variable(Variable, Opts, #{variable_recursion := Counter} = State) 
+tag_variable(Variable, Opts, #{variable_recursion := Counter} = State)
   when Counter<0 ->
     {stop, {variable_recursion, Variable}, State};
 tag_variable(Variable, #{variables := Variables} = Opts, State) ->
     Counter = maps:get(variable_recursion, State, 0),
     try #{Variable := Value} = Variables of
-        _ when is_binary(Value) -> 
+        _ when is_binary(Value) ->
             content(Value, Opts, State);
-        _ when is_atom(Value) -> 
+        _ when is_atom(Value) ->
             content(Value, Opts, State);
-        _ when is_integer(Value) -> 
+        _ when is_integer(Value) ->
             content(Value, Opts, State);
-        _ when is_float(Value) -> 
+        _ when is_float(Value) ->
             content(Value, Opts, State);
-        _  -> 
+        _  ->
             tag(Value, Opts#{ variables => maps:remove(Variable, Variables)}
                ,State#{variable_recursion => Counter})
     catch
@@ -429,7 +442,7 @@ attributes(Tag, Attributes, [Key|Keys], Buffer, Opts, State) ->
       Return :: return().
 
 % convert keys to binary
-attribute(Tag, Key, Value, Opts, State) 
+attribute(Tag, Key, Value, Opts, State)
   when is_atom(Key) ->
     attribute(Tag, atom_to_binary(Key), Value, Opts, State);
 attribute(Tag, Key, Value, Opts, State)
@@ -437,10 +450,10 @@ attribute(Tag, Key, Value, Opts, State)
     attribute(Tag, list_to_binary(Key), Value, Opts, State);
 
 % convert values to binary
-attribute(Tag, Key, Value, Opts, State) 
+attribute(Tag, Key, Value, Opts, State)
   when is_atom(Value) ->
     attribute(Tag, Key, atom_to_binary(Value), Opts, State);
-attribute(Tag, Key, Value, Opts, State) 
+attribute(Tag, Key, Value, Opts, State)
   when is_list(Value) ->
     attribute(Tag, Key, list_to_binary(Value), Opts, State);
 
@@ -477,16 +490,16 @@ attribute(Tag, Key, Value, Opts, State) ->
       State :: term(),
       Return :: return().
 
-content(Content, Opts, State) 
+content(Content, Opts, State)
   when is_atom(Content) ->
     content(atom_to_binary(Content), Opts, State);
-content(Content, Opts, State) 
+content(Content, Opts, State)
   when is_integer(Content) ->
     content(integer_to_binary(Content), Opts, State);
-content(Content, Opts, State) 
+content(Content, Opts, State)
   when is_float(Content) ->
     content(float_to_binary(Content), Opts, State);
-content(Content, Opts, State) 
+content(Content, Opts, State)
   when is_list(Content) ->
     content(list_to_binary(Content), Opts, State);
 content(Content, #{ entities := false } = _Opts, State)
@@ -540,3 +553,38 @@ bracket(Element, Attributes) ->
 %%--------------------------------------------------------------------
 bracket_end(Element) ->
     <<"</", Element/binary, ">">>.
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+check_file(Filename, #{ root := Root } = Opts) ->
+    case filelib:safe_relative_path(Filename, Root) of
+        unsafe ->
+            {error, unsafe};
+        Elsewise ->
+            {ok, Elsewise}
+    end.
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+include_raw(Filename, #{ root := Root } = Opts) ->
+    FullPath = filename:join(Root, Filename),
+    case check_file(Filename, Opts) of
+        unsafe ->
+            {error, unsafe};
+        _ ->
+            file:read_file(FullPath)
+    end.
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+include_template(Filename, #{ root := Root } = Opts) ->
+    FullPath = filename:join(Root, Filename),
+    case check_file(Filename, Opts) of
+        {error, unsafe} ->
+            {error, unsafe};
+        {ok, _} ->
+            file:consult(FullPath)
+    end.
