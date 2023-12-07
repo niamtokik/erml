@@ -77,8 +77,8 @@
 %%%
 %%% @end
 %%%===================================================================
--module(erml_tag).
--export([create/1, create/2]).
+-module(erml_html5).
+-export([compile/1, compile/2]).
 -export([init/1]).
 -export([tag/3]).
 -export([attribute/5]).
@@ -94,19 +94,28 @@
 -type return() :: return_ok() | return_stop().
 
 %%--------------------------------------------------------------------
-%%
+%% @doc
+%% @end
 %%--------------------------------------------------------------------
-create(Data) -> create(Data, #{}).
-create(Data, Opts) -> erml_serializer:compile(?MODULE, [], Data, Opts).
+compile(Data) ->
+    compile(Data, #{}).
 
 %%--------------------------------------------------------------------
-%%
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+compile(Data, Opts) ->
+    erml_serializer:compile(?MODULE, [], Data, Opts).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @end
 %%--------------------------------------------------------------------
 -spec init(Args) -> Return when
       Args :: term(),
       Return :: term().
 
-init(Args) ->
+init(_Args) ->
     {ok, #{}}.
 
 %%--------------------------------------------------------------------
@@ -132,9 +141,9 @@ tag({Variable}, Opts, State) ->
 %--------------------------------------------------------------------
 % explicit content with specific options
 %--------------------------------------------------------------------
-tag({content, Content} = Tag, Opts, State) ->
+tag({content, Content}, Opts, State) ->
     content(Content, Opts, State);
-tag({content, Content, LocalOpts} = Tag, Opts, State) ->
+tag({content, Content, LocalOpts}, Opts, State) ->
     content(Content, maps:merge(Opts, LocalOpts), State);
 
 %---------------------------------------------------------------------
@@ -144,7 +153,7 @@ tag({content, Content, LocalOpts} = Tag, Opts, State) ->
 %---------------------------------------------------------------------
 tag({include_raw, Path}, Opts, State) ->
     tag({include_raw, Path, Opts}, Opts, State);
-tag({include_raw, Path, LocalOpts} = Tag, #{root := Root} = Opts, State) ->
+tag({include_raw, Path, LocalOpts}, #{root := Root} = Opts, State) ->
     CleanRoot = maps:remove(root, LocalOpts),
     CleanOpts = maps:merge(Opts, CleanRoot),
     case include_raw(Path, CleanOpts) of
@@ -153,21 +162,26 @@ tag({include_raw, Path, LocalOpts} = Tag, #{root := Root} = Opts, State) ->
         {error, Reason} ->
             {stop, {error, Reason, filename:join(Root, Path)}, State}
     end;
-tag({include_raw, Path, LocalOpts} = Tag, Opts, State) ->
+tag({include_raw, _Path, _LocalOpts}, Opts, State) ->
     {stop, {missing_root, Opts}, State};
 
 %---------------------------------------------------------------------
 % add template include support. A template is an erml file or a list
 % of term containing erml html tags.
 %---------------------------------------------------------------------
-tag({include_template, Path} = Tag, #{ root := Root } = Opts, State) ->
+tag({include_template, Path}, #{ root := Root } = Opts, State) ->
     case include_template(Path, Opts) of
         {ok, Template} ->
-            create(Template, Opts);
+            case compile(Template, Opts) of
+                {ok, Content} ->
+                    {ok, Content, State};
+                Elsewise ->
+                    Elsewise
+            end;
         {error, Reason} ->
             {stop, {error, Reason, filename:join(Root, Path)}, State}
     end;
-tag({include_template, Path, LocalOpts} = Tag, Opts, State) ->
+tag({include_template, _Path, _LocalOpts}, Opts, State) ->
     {stop, {missing_root, Opts}, State};
 
 %---------------------------------------------------------------------
@@ -204,13 +218,13 @@ tag({call, Pid, Message, Timeout}, Opts, State) ->
 % gen_server support
 tag({gen_server, call, Pid, Message}, Opts, State) ->
     tag({gen_server, call, Pid, Message, 1000}, Opts, State);
-tag({gen_server, call, Pid, Message, Timeout} = Call, Opts, State) ->
+tag({gen_server, call, _Pid, _Message, _Timeout} = Call, _Opts, State) ->
     {ok, Call, State};
 
 % statem support
 tag({gen_statem, call, Pid, Message}, Opts, State) ->
     tag({gen_statem, call, Pid, Message, 1000}, Opts, State);
-tag({gen_statem, call, Pid, Message, Timeout} = Call, Opts, State) ->
+tag({gen_statem, call, _Pid, _Message, _Timeout} = Call, _Opts, State) ->
     {ok, Call, State};
 
 %---------------------------------------------------------------------
@@ -218,7 +232,7 @@ tag({gen_statem, call, Pid, Message, Timeout} = Call, Opts, State) ->
 % page. Every time the page is called, MFA defined is called and then
 % generate a new page.
 %---------------------------------------------------------------------
-tag({apply, Module, Function, Arguments}, Opts, State)
+tag({apply, Module, Function, Arguments}, _Opts, State)
   when is_atom(Module), is_atom(Function), is_list(Arguments) ->
     try apply(Module, Function, Arguments) of
         {ok, Result} when is_binary(Result) ->
@@ -232,7 +246,7 @@ tag({apply, Module, Function, Arguments}, Opts, State)
 %---------------------------------------------------------------------
 tag({apply, Function, Arguments}, Opts, State)
   when is_atom(Function), is_list(Arguments) ->
-    try Function(Arguments) of
+    try Function(Arguments ++ [Opts]) of
         {ok, Result} when is_binary(Result) ->
             {ok, Result, State}
     catch
@@ -242,7 +256,7 @@ tag({apply, Function, Arguments}, Opts, State)
 %---------------------------------------------------------------------
 % add support for function generator (without argument). Same as MFA.
 %---------------------------------------------------------------------
-tag({apply, Function}, Opts, State)
+tag({apply, Function}, _Opts, State)
   when is_function(Function, 0) ->
     try Function() of
         {ok, Result} when is_binary(Result) ->
@@ -267,33 +281,33 @@ tag({apply, Function}, Opts, State)
 % add support for empty tag. Empty tags are special tags without
 % content.
 %---------------------------------------------------------------------
-tag({empty, Tag} = T, Opts, State) ->
+tag({empty, Tag}, Opts, State) ->
     tag({{empty, Tag}, #{}}, Opts, State);
 
-tag({{empty, Tag}, Attributes}, Opts, State) 
+tag({{empty, Tag}, Attributes}, Opts, State)
   when is_binary(Tag) ->
     {ok, bracket_empty(Tag, Attributes, Opts, State), <<>>, State};
 
-tag({{empty, Tag}, Attributes}, Opts, State) 
+tag({{empty, Tag}, Attributes}, Opts, State)
   when is_atom(Tag) ->
     tag({{empty, atom_to_binary(Tag)}, Attributes}, Opts, State);
-tag({{empty, Tag}, Attributes}, Opts, State) 
+tag({{empty, Tag}, Attributes}, Opts, State)
   when is_list(Tag) ->
     tag({{empty, list_to_binary(Tag)}, Attributes}, Opts, State);
-tag({{empty, Tag}, Attributes}, Opts, State) 
+tag({{empty, Tag}, Attributes}, Opts, State)
   when is_integer(Tag) ->
     tag({{empty, integer_to_binary(Tag)}, Attributes}, Opts, State);
-tag({{empty, Tag} = T, Attributes}, Opts, State) ->
+tag({{empty, _Tag} = T, _Attributes}, Opts, State) ->
     {stop, {todo, T, Opts}, State};
 
 %--------------------------------------------------------------------
 % empty elements
 %--------------------------------------------------------------------
-tag({Tag, Attributes}, Opts, State) 
+tag({Tag, Attributes}, Opts, State)
   when Tag =:= input; Tag =:= "input"; Tag =:= <<"input">> ->
     tag({{empty, Tag}, Attributes}, Opts, State);
 
-tag({Tag, Attributes}, Opts, State) 
+tag({Tag, Attributes}, Opts, State)
   when Tag =:= area; Tag =:= "area"; Tag =:= <<"area">> ->
     tag({{empty, Tag}, Attributes}, Opts, State);
 
@@ -336,41 +350,41 @@ tag({Tag, Attributes}, Opts, State)
 %---------------------------------------------------------------------
 % special elements
 %---------------------------------------------------------------------
-tag({<<"code">>, Attributes, [Integer|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_integer(Integer), Integer>0 ->
-    Result = list_to_binary(Content),
-    tag({<<"code">>, Attributes, Result}, Opts, State);
-tag({<<"code">>, Attributes, [List|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_list(List) ->
-    Result = list_to_binary(string:join(Content, "\n")),
-    tag({<<"code">>, Attributes, Result}, Opts, State);
-tag({<<"code">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_binary(Binary) ->
-    Result = join(Content, <<"\n">>),
-    tag({<<"code">>, Attributes, Result}, Opts, State);
-tag({<<"code">>, Attributes, Content}, Opts, State)
-  when is_binary(Content) ->
-    Begin = bracket(<<"code">>, <<>>),
-    End = bracket_end(<<"code">>),
-    {ok, <<Begin/binary, Content/binary, End/binary>>, State};
+% tag({<<"code">>, Attributes, [Integer|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_integer(Integer), Integer>0 ->
+%     Result = list_to_binary(Content),
+%     tag({<<"code">>, Attributes, Result}, Opts, State);
+% tag({<<"code">>, Attributes, [List|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_list(List) ->
+%     Result = list_to_binary(string:join(Content, "\n")),
+%     tag({<<"code">>, Attributes, Result}, Opts, State);
+% tag({<<"code">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_binary(Binary) ->
+%     Result = join(Content, <<"\n">>),
+%     tag({<<"code">>, Attributes, Result}, Opts, State);
+% tag({<<"code">>, Attributes, Content}, Opts, State)
+%   when is_binary(Content) ->
+%     Begin = bracket(<<"code">>, <<>>),
+%     End = bracket_end(<<"code">>),
+%     {ok, <<Begin/binary, Content/binary, End/binary>>, State};
 
-tag({<<"pre">>, Attributes, [Integer|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_integer(Integer), Integer>0 ->
-    Result = list_to_binary(Content),
-    tag({<<"pre">>, Attributes, Result}, Opts, State);
-tag({<<"pre">>, Attributes, [List|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_list(List) ->
-    Result = list_to_binary(string:join(Content, "\n")),
-    tag({<<"pre">>, Attributes, Result}, Opts, State);
-tag({<<"pre">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
-  when is_list(Content), is_binary(Binary) ->
-    Result = join(Content, <<"\n">>),
-    tag({<<"pre">>, Attributes, Result}, Opts, State);
-tag({<<"pre">>, Attributes, Content}, Opts, State)
-  when is_binary(Content) ->
-    Begin = bracket(<<"pre">>, <<>>),
-    End = bracket_end(<<"pre">>),
-    {ok, <<Begin/binary, Content/binary, End/binary>>, State};
+% tag({<<"pre">>, Attributes, [Integer|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_integer(Integer), Integer>0 ->
+%     Result = list_to_binary(Content),
+%     tag({<<"pre">>, Attributes, Result}, Opts, State);
+% tag({<<"pre">>, Attributes, [List|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_list(List) ->
+%     Result = list_to_binary(string:join(Content, "\n")),
+%     tag({<<"pre">>, Attributes, Result}, Opts, State);
+% tag({<<"pre">>, Attributes, [Binary|_] = Content} = Tag, Opts, State)
+%   when is_list(Content), is_binary(Binary) ->
+%     Result = join(Content, <<"\n">>),
+%     tag({<<"pre">>, Attributes, Result}, Opts, State);
+% tag({<<"pre">>, _Attributes, Content}, _Opts, State)
+%   when is_binary(Content) ->
+%     Begin = bracket(<<"pre">>, <<>>),
+%     End = bracket_end(<<"pre">>),
+%     {ok, <<Begin/binary, Content/binary, End/binary>>, State};
 
 %---------------------------------------------------------------------
 % add support for regular tag
@@ -383,11 +397,11 @@ tag({Tag, Attributes, Content}, Opts, State)
         {ok, <<>>, NewState} ->
             Begin = bracket(Tag, <<>>),
             End = bracket_end(Tag),
-            {ok, Begin, End, Content, State};
+            {ok, Begin, End, Content, NewState};
         {ok, Serialized, NewState} ->
             Begin = bracket(Tag, Serialized),
             End = bracket_end(Tag),
-            {ok, Begin, End, Content, State}
+            {ok, Begin, End, Content, NewState}
     end;
 
 %---------------------------------------------------------------------
@@ -403,10 +417,10 @@ tag(Tags, Opts, State)
 % by default. It offers a flexible way to define tags for the developer.
 %---------------------------------------------------------------------
 % special case
-tag({Tag, Content}, Opts, State) 
+tag({Tag, Content}, Opts, State)
   when is_list(Content) ->
     tag({Tag, #{}, Content}, Opts, State);
-tag({Tag, Content}, Opts, State) 
+tag({Tag, Content}, Opts, State)
   when is_tuple(Content) ->
     tag({Tag, #{}, Content}, Opts, State);
 
@@ -446,10 +460,10 @@ tag(Unsupported, Opts, State) ->
 %%--------------------------------------------------------------------
 %% internal function to deal with variable.
 %%--------------------------------------------------------------------
-tag_variable(Variable, Opts, #{variable_recursion := Counter} = State)
+tag_variable(Variable, _Opts, #{variable_recursion := Counter} = State)
   when Counter>100 ->
     {stop, {variable_recursion, Variable}, State};
-tag_variable(Variable, Opts, #{variable_recursion := Counter} = State)
+tag_variable(Variable, _Opts, #{variable_recursion := Counter} = State)
   when Counter<0 ->
     {stop, {variable_recursion, Variable}, State};
 tag_variable(Variable, #{variables := Variables} = Opts, State) ->
@@ -473,16 +487,23 @@ tag_variable(_Variable, Opts, State) ->
     {stop, {not_configured, variables, Opts}, State}.
 
 %%--------------------------------------------------------------------
-%%
+%% @hidden
+%% @doc attributes generation.
+%% @end
 %%--------------------------------------------------------------------
-attributes(Tag, Attributes, Opts, State) 
+attributes(Tag, Attributes, Opts, State)
   when is_list(Attributes) ->
-    attributes_list(Tag, Attributes, [], Opts, State);    
-attributes(Tag, Attributes, Opts, State) 
+    attributes_list(Tag, Attributes, [], Opts, State);
+attributes(Tag, Attributes, Opts, State)
   when is_map(Attributes) ->
     attributes(Tag, Attributes, maps:keys(Attributes), [], Opts, State).
 
-attributes(Tag, Attributes, [], Buffer, Opts, State) ->
+%%--------------------------------------------------------------------
+%% @hidden
+%% @doc attributes as map.
+%% @end
+%%--------------------------------------------------------------------
+attributes(_Tag, _Attributes, [], Buffer, _Opts, State) ->
     {ok, join(lists:reverse(Buffer)), State};
 attributes(Tag, Attributes, [Key|Keys], Buffer, Opts, State) ->
     Value = maps:get(Key, Attributes),
@@ -497,16 +518,21 @@ attributes(Tag, Attributes, [Key|Keys], Buffer, Opts, State) ->
             Elsewise
     end.
 
-attributes_list(Tag, [], Buffer, Opts, State) ->
-    {ok, join(lists:reverse(Buffer)), State};
-attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+%%--------------------------------------------------------------------
+%% @hidden
+%% @doc attributes as list.
+%% @end
+%%--------------------------------------------------------------------
+attributes_list(_Tag, [], Buffer, _Opts, State) ->
+    {ok, join(Buffer), State};
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State)
   when is_atom(Attribute) ->
     Void = atom_to_binary(Attribute),
     attributes_list(Tag, Attributes, [Void|Buffer], Opts, State);
-attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State)
   when is_binary(Attribute) ->
     attributes_list(Tag, Attributes, [Attribute|Buffer], Opts, State);
-attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State)
   when is_list(Attribute) ->
     Binary = list_to_binary(Attribute),
     attributes_list(Tag, Attributes, [Binary|Buffer], Opts, State);
@@ -568,10 +594,10 @@ attribute(Tag, Key, Value, Opts, State)
 %%     {ok, Key, Value, State};
 %% attribute(_Tag, <<"htmx-", _binary/binary>> = Key, Value, Opts, State) ->
 %%     {ok, Key, Value, State};
-attribute(_Tag, Key, {}, Opts, State)
+attribute(_Tag, Key, {}, _Opts, State)
   when is_binary(Key) ->
     {ok, Key, <<>>, State};
-attribute(_Tag, Key, Value, Opts, State)
+attribute(_Tag, Key, Value, _Opts, State)
   when is_binary(Key), is_binary(Value) ->
     {ok, Key, quote(Value, $"), State};
 
@@ -604,7 +630,7 @@ content(Content, Opts, State)
 content(Content, #{ entities := false } = _Opts, State)
   when is_binary(Content) ->
     {ok, Content, State};
-content(Content, Opts, State)
+content(Content, _Opts, State)
   when is_binary(Content) ->
     {ok, erml_html_entities:encode(Content), State};
 content(Content, Opts, State) ->
@@ -636,9 +662,9 @@ quote(Value, Char) ->
 %%--------------------------------------------------------------------
 bracket_empty(Element, Attributes, Opts, State) ->
     case  attributes(Element, Attributes, Opts, State) of
-        {ok, <<>>, NewState} ->
+        {ok, <<>>, _NewState} ->
             <<"<", Element/binary, ">">>;
-        {ok, NewAttributes, NewState} ->
+        {ok, NewAttributes, _NewState} ->
             <<"<", Element/binary, " ", NewAttributes/binary,">">>;
         Elsewise ->
             Elsewise
@@ -661,7 +687,7 @@ bracket_end(Element) ->
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
-check_file(Filename, #{ root := Root } = Opts) ->
+check_file(Filename, #{ root := Root } = _Opts) ->
     case filelib:safe_relative_path(Filename, Root) of
         unsafe ->
             {error, unsafe};
@@ -669,13 +695,21 @@ check_file(Filename, #{ root := Root } = Opts) ->
             {ok, Elsewise}
     end.
 
+full_path(Filename, Root) ->
+    case filename:pathtype(Filename) of
+        absolute -> 
+            filename:append(Root, Filename);
+        relative ->
+            filename:join(Root, Filename)
+    end.
+
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
 include_raw(Filename, #{ root := Root } = Opts) ->
-    FullPath = filename:join(Root, Filename),
+    FullPath = full_path(Filename, Root),
     case check_file(Filename, Opts) of
-        unsafe ->
+        {error, unsafe} ->
             {error, unsafe};
         _ ->
             file:read_file(FullPath)
@@ -685,7 +719,7 @@ include_raw(Filename, #{ root := Root } = Opts) ->
 %%
 %%--------------------------------------------------------------------
 include_template(Filename, #{ root := Root } = Opts) ->
-    FullPath = filename:join(Root, Filename),
+    FullPath = full_path(Filename, Root),
     case check_file(Filename, Opts) of
         {error, unsafe} ->
             {error, unsafe};
