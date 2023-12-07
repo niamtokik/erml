@@ -1,0 +1,118 @@
+{html, [
+  {head, [
+    {title, [<<"Nostr">>]},
+    {link, #{rel => "stylesheet", href => "https://unpkg.com/spectre.css/dist/spectre.min.css"}},
+    {link, #{rel => "stylesheet", href => "https://unpkg.com/spectre.css/dist/spectre-exp.min.css"}},
+    {link, #{rel => "stylesheet", href => "https://unpkg.com/spectre.css/dist/spectre-icons.min.css"}},
+    {script, #{src => "https://unpkg.com/htmx.org@1.9.9"}, []}
+  ]},
+  {body, [
+    {'div', #{class => "container", style => "max-width: 1280px; min-height: 100vh;"}, [
+      {'div', #{id => "main", class => "columns"}, [
+        {'div', #{id => "left-menu", class => "bg-light column col-3"}, [
+          {ul, #{class => menu}, [
+            {li, #{class => "menu-item"}, [
+              {h1, <<"nostr">>}
+            ]},
+            {li, #{class => "menu-item"}, [
+              {a, #{href => "#"}, [<<"Home">>]}
+            ]},
+            {li, #{class => "menu-item"}, [
+              {a, #{href => "#"}, [<<"Explore">>]}
+            ]},
+            {li, #{class => "menu-item"}, [
+              {a, #{href => "#"}, [<<"Notifications">>]}
+            ]},
+            {li, #{class => "menu-item"}, [
+              {a, #{href => "#"}, [<<"Messages">>]}
+            ]},
+            {li, #{class => "menu-item"}, [
+              {a, #{href => "#"}, [<<"Profile">>]}
+            ]},
+            {li, #{class => "divider"}, []},
+            {li, #{class => "menu-item p-centered"}, [
+              {button, #{class => "btn btn-primary", style => "width: 100%;"}, [<<"Post">>]}
+            ]}
+          ]}
+        ]},
+        {'div', #{id => "content", class => "column col-9"}, [
+          {'div', #{class => "columns"}, [
+            {'div', #{class => "bg-light column col-9 "}, [
+
+              {'div', #{class => "tile p-2 m-2", style => "border: 1px solid #d5d5d5;"}, [
+                {'div', #{class => "tile-icon"}, [
+                  {figure, #{class => "avatar avatar-xl"}, [
+                    {img, #{src => "https://picsum.photos/id/237/200/300", alt => "..."}}
+                  ]}
+                ]},
+                {'div', #{class => "tile-content"}, [
+                  {p, <<"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur efficitur est ornare neque malesuada, nec consequat mauris vestibulum. Duis a arcu sit amet ex tincidunt porttitor at sit amet tellus. Nam ultricies ante congue sapien feugiat, eu facilisis nisi congue. Aliquam efficitur pellentesque gravida. Nullam eu nisl eget erat facilisis fermentum quis eget ex. Phasellus vestibulum augue sed risus bibendum accumsan. ">>},
+                  {figure, #{class => figure}, [
+                    {img, #{ src => "https://picsum.photos/seed/picsum/600/400", class => "img-responsive"}}
+                  ]},
+                  {p, #{class => "tile-action p-0 m-0 text-right"}, [
+                    {button, #{class => "btn btn-primay"}, [<<"Contact">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Comment">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Repost">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Like">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Share">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Ignore">>]}
+                  ]}
+                ]}
+              ]},
+
+              {'div', #{class => "tile p-2 m-2", style => "border: 1px solid #d5d5d5;"}, [
+                {'div', #{class => "tile-icon"}, [
+                  {figure, #{class => "avatar avatar-xl"}, [
+                    {img, #{src => "https://picsum.photos/id/217/200/300", alt => "..."}}
+                  ]}
+                ]},
+                {'div', #{class => "tile-content"}, [
+                  {p, <<"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur efficitur est ornare neque malesuada, nec consequat mauris vestibulum. Duis a arcu sit amet ex tincidunt porttitor at sit amet tellus. Nam ultricies ante congue sapien feugiat, eu facilisis nisi congue. Aliquam efficitur pellentesque gravida. Nullam eu nisl eget erat facilisis fermentum quis eget ex. Phasellus vestibulum augue sed risus bibendum accumsan. ">>},
+                  {figure, #{class => figure}, [
+                    {img, #{ src => "https://picsum.photos/id/342/600/400", class => "img-responsive"}}
+                  ]},
+                  {p, #{class => "tile-action p-0 m-0 text-right"}, [
+                    {button, #{class => "btn btn-primay"}, [<<"Contact">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Comment">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Repost">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Like">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Share">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Ignore">>]}
+                  ]}
+                ]}
+              ]},
+
+              {'div', #{class => "tile p-2 m-2", style => "border: 1px solid #d5d5d5;"}, [
+                {'div', #{class => "tile-icon"}, [
+                  {figure, #{class => "avatar avatar-xl"}, [
+                    {img, #{src => "https://picsum.photos/id/451/200/300", alt => "..."}}
+                  ]}
+                ]},
+                {'div', #{class => "tile-content"}, [
+                  {p, <<"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur efficitur est ornare neque malesuada, nec consequat mauris vestibulum. Duis a arcu sit amet ex tincidunt porttitor at sit amet tellus. Nam ultricies ante congue sapien feugiat, eu facilisis nisi congue. Aliquam efficitur pellentesque gravida. Nullam eu nisl eget erat facilisis fermentum quis eget ex. Phasellus vestibulum augue sed risus bibendum accumsan. ">>},
+                  {figure, #{class => figure}, [
+                    {img, #{ src => "https://picsum.photos/id/542/600/400", class => "img-responsive"}}
+                  ]},
+                  {p, #{class => "tile-action p-0 m-0 text-right"}, [
+                    {button, #{class => "btn btn-primay"}, [<<"Contact">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Comment">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Repost">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Like">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Share">>]},
+                    {button, #{class => "btn btn-primay"}, [<<"Ignore">>]}
+                  ]}
+                ]}
+              ]}
+
+            ]},
+
+            {'div', #{class => "bg-gray column col-3 mt-2 pt-2 hide-lg"}, [
+              <<"test2">>
+            ]}
+          ]}
+        ]}
+      ]}
+    ]}
+  ]}
+]}.

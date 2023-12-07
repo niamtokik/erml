@@ -1,0 +1,12 @@
+{'div', #{class => "hero bg-secondary", style => "min-height: 100vh;"}, [
+  {'div', #{class => "hero-body"}, [
+    {'div', #{class => "container"}, [
+      {h1, #{class => "p-centered"}, <<"Erlang-Punch">>},
+        {'div', #{class => "columns"}, [
+          {'div', #{class => "column col-8"},
+            {include_template, "examples/erlang-punch/lorem_ipsum.erml"}
+          }
+        ]}
+      ]}
+    ]}
+  ]}.

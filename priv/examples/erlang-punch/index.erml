@@ -7,39 +7,8 @@
     {script, #{src => "https://unpkg.com/htmx.org@1.9.9"}, []}
   ]},
   {body, [
-    {'div', #{class => "hero bg-primary", style => "min-height: 100vh;"}, [
-      {'div', #{class => "hero-body"}, [
-        {'div', #{class => "container"}, [
-          {h1, #{class => "p-centered"}, <<"Erlang-Punch">>},
-          {'div', #{class => "columns"}, [
-            {'div', #{class => "column col-8"}, 
-              {include_raw, "examples/erlang-punch/lorem_ipsum.txt"}
-            }
-          ]}
-        ]}
-      ]}
-    ]},
-
-    {'div', #{class => "hero bg-secondary", style => "min-height: 100vh;"}, [
-      {'div', #{class => "hero-body"}, [
-        {'div', #{class => "container"}, [
-          {h1, #{class => "p-centered"}, <<"Erlang-Punch">>},
-          {'div', #{class => "columns"}, [
-            {'div', #{class => "column col-8"}, [
-                {include_template, "examples/erlang-punch/lorem_ipsum.erml"}
-              ]
-            }
-          ]}
-        ]}
-      ]}
-    ]},
-
-    {'div', #{class => "hero bg-dark", style => "min-height: 100vh;"}, [
-      {'div', #{class => "hero-body"}, [
-        {h1, <<"Erlang-Punch">>},
-        {p, []}
-      ]}
-    ]}
-
+    {include_template, "examples/erlang-punch/hero_01.erml"},
+    {include_template, "examples/erlang-punch/hero_02.erml"},
+    {include_template, "examples/erlang-punch/hero_03.erml"}
   ]}
 ]}.

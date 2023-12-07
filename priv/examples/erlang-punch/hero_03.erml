@@ -1,0 +1,6 @@
+{'div', #{class => "hero bg-dark", style => "min-height: 100vh;"}, [
+  {'div', #{class => "hero-body"}, [
+    {h1, <<"Erlang-Punch">>},
+      {p, []}
+    ]}
+  ]}.
