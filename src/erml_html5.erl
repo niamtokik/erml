@@ -172,12 +172,7 @@ tag({include_raw, _Path, _LocalOpts}, Opts, State) ->
 tag({include_template, Path}, #{ root := Root } = Opts, State) ->
     case include_template(Path, Opts) of
         {ok, Template} ->
-            case compile(Template, Opts) of
-                {ok, Content} ->
-                    {ok, Content, State};
-                Elsewise ->
-                    Elsewise
-            end;
+            tag(Template, Opts, State);
         {error, Reason} ->
             {stop, {error, Reason, filename:join(Root, Path)}, State}
     end;
@@ -408,9 +403,14 @@ tag({Tag, Attributes, Content}, Opts, State)
 % add support when a list is present. If a list is present, we assume
 % this is a list of tags and we should treat them one by one.
 %---------------------------------------------------------------------
-tag(Tags, Opts, State)
-  when is_list(Tags) ->
-    {stop, {todo, Tags, Opts}, State};
+tag(List, Opts, State)
+  when is_list(List) ->
+    case compile(List, Opts) of
+        {ok, Result} ->
+            {ok, Result, State};
+        Elsewise ->
+            Elsewise
+    end;
 
 %---------------------------------------------------------------------
 % All tags defined as atom, list or numbers are converted into binary
@@ -455,7 +455,7 @@ tag(Text, Opts, State)
 % If unsupported tags are present, we should stop.
 %---------------------------------------------------------------------
 tag(Unsupported, Opts, State) ->
-    {stop, {todo, Unsupported, Opts}, State}.
+    {stop, {todo, unsupported, Unsupported, Opts}, State}.
 
 %%--------------------------------------------------------------------
 %% internal function to deal with variable.

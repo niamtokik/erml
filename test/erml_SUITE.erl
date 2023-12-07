@@ -121,88 +121,88 @@ tag() ->
 %%--------------------------------------------------------------------
 tag(_Config) ->
     % empty document
-    {ok, <<>>} = erml_tag:create([]),
-    {ok, <<>>} = erml_tag:create(<<>>),
+    {ok, <<>>} = erml_html5:compile([]),
+    {ok, <<>>} = erml_html5:compile(<<>>),
 
     % simple tag without attributes
-    {ok, <<"<html></html>">>} = erml_tag:create({html, []}),
-    {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, []}),
-    {ok, <<"<html></html>">>} = erml_tag:create({"html", []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({html, []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({<<"html">>, []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({"html", []}),
     {ok, <<"<html><body></body></html>">>}
-        = erml_tag:create({html, {body, []}}),
+        = erml_html5:compile({html, {body, []}}),
 
     % simple tag with attributes
-    {ok, <<"<html></html>">>} = erml_tag:create({html, #{}, []}),
-    {ok, <<"<html></html>">>} = erml_tag:create({<<"html">>, #{}, []}),
-    {ok, <<"<html></html>">>} = erml_tag:create({"html", #{}, []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({html, #{}, []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({<<"html">>, #{}, []}),
+    {ok, <<"<html></html>">>} = erml_html5:compile({"html", #{}, []}),
     {ok, <<"<html><body></body></html>">>}
-        = erml_tag:create({html, #{}, {body, #{}, []}}),
+        = erml_html5:compile({html, #{}, {body, #{}, []}}),
 
     % simple tag with attributes support.
     {ok, <<"<html><body class=\"test\"></body></html>">>}
-        = erml_tag:create({html, #{}, {body, #{class => "test"}, []}}),
+        = erml_html5:compile({html, #{}, {body, #{class => "test"}, []}}),
     {ok, <<"<html><body class=\"test\"></body></html>">>}
-        = erml_tag:create({html, #{}, {body, #{class => test}, []}}),
+        = erml_html5:compile({html, #{}, {body, #{class => test}, []}}),
     {ok, <<"<html><body class=\"test\"></body></html>">>}
-        = erml_tag:create({html, #{}, {body, #{class => <<"test">>}, []}}),
+        = erml_html5:compile({html, #{}, {body, #{class => <<"test">>}, []}}),
 
     % content and entities support
     {ok, <<"<html><body>test</body></html>">>}
-        = erml_tag:create({html, {body, <<"test">>}}),
+        = erml_html5:compile({html, {body, <<"test">>}}),
     {ok, <<"<html><body>test</body></html>">>}
-        = erml_tag:create({html, {body, test}}),
+        = erml_html5:compile({html, {body, test}}),
     {ok, <<"<html><body>123</body></html>">>}
-        = erml_tag:create({html, {body, 123}}),
+        = erml_html5:compile({html, {body, 123}}),
     {ok, <<"<html><body>1.00000000000000000000e&plus;00</body></html>">>}
-        = erml_tag:create({html, {body, 1.0}}),
+        = erml_html5:compile({html, {body, 1.0}}),
     {ok, <<"<html><body><p>that&apos;s a test!</p></body></html>">>}
-        = erml_tag:create([{html, {body, {p, [<<"that's a test!">>]}}}]),
+        = erml_html5:compile([{html, {body, {p, [<<"that's a test!">>]}}}]),
 
     % dynamic template (gen_server call by default)
     {ok, [ <<"<html><body>">>
          , {gen_server,call,server,paragraph,1000}
          , <<"</body></html>">>
          ]
-    } = erml_tag:create({html, {body, {call, server, paragraph}}}),
+    } = erml_html5:compile({html, {body, {call, server, paragraph}}}),
 
     % dynamic template (gen_server call)
     {ok, [ <<"<html><body>">>
          , {gen_server,call,server,paragraph,1000}
          , <<"</body></html>">>
          ]
-    } = erml_tag:create({html, {body, {gen_server, call, server, paragraph}}}),
+    } = erml_html5:compile({html, {body, {gen_server, call, server, paragraph}}}),
 
     % dynamic template (gen_statem call)
     {ok, [ <<"<html><body>">>
          , {gen_statem,call,server,paragraph,1000}
          , <<"</body></html>">>
          ]
-    } = erml_tag:create({html, {body, {gen_statem, call, server, paragraph}}}),
+    } = erml_html5:compile({html, {body, {gen_statem, call, server, paragraph}}}),
 
     % special tags
-    {ok, <<"<pre></pre>">>} = erml_tag:create({pre, []}),
-    {ok, <<"<pre>test\ndata</pre>">>}
-        = erml_tag:create({pre, ["test", "data"]}),
-    {ok, <<"<pre><code>test\ndata</code></pre>">>}
-        = erml_tag:create({pre, {code, ["test", "data"]}}),
+    % {ok, <<"<pre></pre>">>} = erml_html5:compile({pre, []}),
+    % {ok, <<"<pre>test\ndata</pre>">>}
+    %    = erml_html5:compile({pre, ["test", "data"]}),
+    % {ok, <<"<pre><code>test\ndata</code></pre>">>}
+    %     = erml_html5:compile({pre, {code, ["test", "data"]}}),
 
     % explicit content with some features
     {ok, <<"test">>}
-        = erml_tag:create({content, "test"}),
+        = erml_html5:compile({content, "test"}),
     {ok, <<"test&amp;">>}
-        = erml_tag:create({content, "test&"}),
+        = erml_html5:compile({content, "test&"}),
     {ok, <<"test&apos;">>}
-        = erml_tag:create({content, <<"test'">>}),
+        = erml_html5:compile({content, <<"test'">>}),
     {ok,<<"test">>}
-        = erml_tag:create({content, test}),
+        = erml_html5:compile({content, test}),
     {ok,<<"test&">>}
-        = erml_tag:create({content, <<"test&">>, #{entities => false}}),
+        = erml_html5:compile({content, <<"test&">>, #{entities => false}}),
 
     % more complex case
     {ok, <<"<html><head><title>test</title></head>"
            "<body><h1>title</h1><p>paragraph</p></body>"
            "</html>">>}
-        = erml_tag:create({html, [{head, {title, test}}
+        = erml_html5:compile({html, [{head, {title, test}}
                                  ,{body, [{h1, title}
                                          ,{p, paragraph}
                                          ]}
@@ -217,56 +217,56 @@ tag(_Config) ->
 custom_tag() -> [].
 custom_tag(_Config) ->
     % custom void element
-    {ok, <<"<html>">>} = erml_tag:create({{empty, html}, []}),
+    {ok, <<"<html>">>} = erml_html5:compile({{empty, html}, []}),
 
     % void elements support: area, base, br, col, embed, hr, img,
     % input, link, meta, source, track, wbr
-    {ok, <<"<input>">>} = erml_tag:create({input, #{}}),
-    {ok, <<"<input>">>} = erml_tag:create({<<"input">>, #{}}),
-    {ok, <<"<input>">>} = erml_tag:create({"input", #{}}),
+    {ok, <<"<input>">>} = erml_html5:compile({input, #{}}),
+    {ok, <<"<input>">>} = erml_html5:compile({<<"input">>, #{}}),
+    {ok, <<"<input>">>} = erml_html5:compile({"input", #{}}),
 
-    {ok, <<"<area>">>} = erml_tag:create({area, #{}}),
-    {ok, <<"<area>">>} = erml_tag:create({<<"area">>, #{}}),
-    {ok, <<"<area>">>} = erml_tag:create({"area", #{}}),
+    {ok, <<"<area>">>} = erml_html5:compile({area, #{}}),
+    {ok, <<"<area>">>} = erml_html5:compile({<<"area">>, #{}}),
+    {ok, <<"<area>">>} = erml_html5:compile({"area", #{}}),
 
-    {ok, <<"<base>">>} = erml_tag:create({base, #{}}),
-    {ok, <<"<base>">>} = erml_tag:create({"base", #{}}),
-    {ok, <<"<base>">>} = erml_tag:create({<<"base">>, #{}}),
+    {ok, <<"<base>">>} = erml_html5:compile({base, #{}}),
+    {ok, <<"<base>">>} = erml_html5:compile({"base", #{}}),
+    {ok, <<"<base>">>} = erml_html5:compile({<<"base">>, #{}}),
 
-    {ok, <<"<br>">>} = erml_tag:create({br, #{}}),
-    {ok, <<"<br>">>} = erml_tag:create({"br", #{}}),
-    {ok, <<"<br>">>} = erml_tag:create({<<"br">>, #{}}),
+    {ok, <<"<br>">>} = erml_html5:compile({br, #{}}),
+    {ok, <<"<br>">>} = erml_html5:compile({"br", #{}}),
+    {ok, <<"<br>">>} = erml_html5:compile({<<"br">>, #{}}),
 
-    {ok, <<"<col>">>} = erml_tag:create({col, #{}}),
-    {ok, <<"<col>">>} = erml_tag:create({<<"col">>, #{}}),
-    {ok, <<"<col>">>} = erml_tag:create({"col", #{}}),
+    {ok, <<"<col>">>} = erml_html5:compile({col, #{}}),
+    {ok, <<"<col>">>} = erml_html5:compile({<<"col">>, #{}}),
+    {ok, <<"<col>">>} = erml_html5:compile({"col", #{}}),
 
-    {ok, <<"<embed>">>} = erml_tag:create({embed, #{}}),
-    {ok, <<"<embed>">>} = erml_tag:create({<<"embed">>, #{}}),
-    {ok, <<"<embed>">>} = erml_tag:create({"embed", #{}}),
+    {ok, <<"<embed>">>} = erml_html5:compile({embed, #{}}),
+    {ok, <<"<embed>">>} = erml_html5:compile({<<"embed">>, #{}}),
+    {ok, <<"<embed>">>} = erml_html5:compile({"embed", #{}}),
 
-    {ok, <<"<hr>">>} = erml_tag:create({hr, #{}}),
-    {ok, <<"<hr>">>} = erml_tag:create({"hr", #{}}),
-    {ok, <<"<hr>">>} = erml_tag:create({<<"hr">>, #{}}),
+    {ok, <<"<hr>">>} = erml_html5:compile({hr, #{}}),
+    {ok, <<"<hr>">>} = erml_html5:compile({"hr", #{}}),
+    {ok, <<"<hr>">>} = erml_html5:compile({<<"hr">>, #{}}),
 
-    {ok, <<"<img>">>} = erml_tag:create({img, #{}}),
-    {ok, <<"<img>">>} = erml_tag:create({"img", #{}}),
-    {ok, <<"<img>">>} = erml_tag:create({<<"img">>, #{}}),
+    {ok, <<"<img>">>} = erml_html5:compile({img, #{}}),
+    {ok, <<"<img>">>} = erml_html5:compile({"img", #{}}),
+    {ok, <<"<img>">>} = erml_html5:compile({<<"img">>, #{}}),
 
-    {ok, <<"<link>">>} = erml_tag:create({link, #{}}),
-    {ok, <<"<link>">>} = erml_tag:create({<<"link">>, #{}}),
-    {ok, <<"<link>">>} = erml_tag:create({"link", #{}}),
+    {ok, <<"<link>">>} = erml_html5:compile({link, #{}}),
+    {ok, <<"<link>">>} = erml_html5:compile({<<"link">>, #{}}),
+    {ok, <<"<link>">>} = erml_html5:compile({"link", #{}}),
 
-    {ok, <<"<meta>">>} = erml_tag:create({meta, #{}}),
-    {ok, <<"<meta>">>} = erml_tag:create({<<"meta">>, #{}}),
-    {ok, <<"<meta>">>} = erml_tag:create({"meta", #{}}),
+    {ok, <<"<meta>">>} = erml_html5:compile({meta, #{}}),
+    {ok, <<"<meta>">>} = erml_html5:compile({<<"meta">>, #{}}),
+    {ok, <<"<meta>">>} = erml_html5:compile({"meta", #{}}),
 
-    {ok, <<"<source>">>} = erml_tag:create({source, #{}}),
-    {ok, <<"<source>">>} = erml_tag:create({<<"source">>, #{}}),
-    {ok, <<"<source>">>} = erml_tag:create({"source", #{}}),
+    {ok, <<"<source>">>} = erml_html5:compile({source, #{}}),
+    {ok, <<"<source>">>} = erml_html5:compile({<<"source">>, #{}}),
+    {ok, <<"<source>">>} = erml_html5:compile({"source", #{}}),
 
     % attributes
-    {ok, <<"<img src=\"/test.png\">">>} = erml_tag:create({img, #{ src => "/test.png" }}),
+    {ok, <<"<img src=\"/test.png\">">>} = erml_html5:compile({img, #{ src => "/test.png" }}),
     ok.    
 
 %%--------------------------------------------------------------------
@@ -278,39 +278,39 @@ variables(_Config) ->
     % serializer stop when a variable is present and variables key is
     % not set
     {stop,{not_configured,variables,#{}},#{}}
-        = erml_tag:create({v}, #{}),
+        = erml_html5:compile({v}, #{}),
 
     % if the variable is not found, the serializer stop
     {stop,{not_found,v},#{}}
-        = erml_tag:create({v}, #{variables => #{test=>1}}),
+        = erml_html5:compile({v}, #{variables => #{test=>1}}),
 
     % simple variable usages
-    {ok, <<"1">>} = erml_tag:create({v}, #{variables => #{v=>1}}),
-    {ok, <<"test">>} = erml_tag:create({v}, #{variables => #{v=><<"test">>}}),
-    {ok, <<"test">>} = erml_tag:create({v}, #{variables => #{v=>test}}),
+    {ok, <<"1">>} = erml_html5:compile({v}, #{variables => #{v=>1}}),
+    {ok, <<"test">>} = erml_html5:compile({v}, #{variables => #{v=><<"test">>}}),
+    {ok, <<"test">>} = erml_html5:compile({v}, #{variables => #{v=>test}}),
 
     % a variable can be of any type you want.
-    {ok, <<"test">>} = erml_tag:create([{1}], #{variables => #{1 => <<"test">>}}),
-    {ok, <<"test">>} = erml_tag:create([{"1"}], #{variables => #{"1" => <<"test">>}}),
-    {ok, <<"test">>} = erml_tag:create([{<<"1">>}], #{variables => #{<<"1">> => <<"test">>}}),
-    {ok, <<"test">>} = erml_tag:create([{#{}}], #{variables => #{#{} => <<"test">>}}),
+    {ok, <<"test">>} = erml_html5:compile([{1}], #{variables => #{1 => <<"test">>}}),
+    {ok, <<"test">>} = erml_html5:compile([{"1"}], #{variables => #{"1" => <<"test">>}}),
+    {ok, <<"test">>} = erml_html5:compile([{<<"1">>}], #{variables => #{<<"1">> => <<"test">>}}),
+    {ok, <<"test">>} = erml_html5:compile([{#{}}], #{variables => #{#{} => <<"test">>}}),
 
     % multivariable support
     {ok,<<"123">>}
-        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>1, v2=>2, v3=>3}}),
+        = erml_html5:compile([{v1},{v2},{v3}], #{variables => #{v1=>1, v2=>2, v3=>3}}),
 
     % yes, we can include a variable into another variable, loop
     % protection exist thought...
     {ok, <<"aba">>}
-        = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v1}}}),
+        = erml_html5:compile([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v1}}}),
 
     % ... and we can have an example here.
     % {stop,{variable_recursion,v3},_}
-    %    = erml_tag:create([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
+    %    = erml_html5:compile([{v1},{v2},{v3}], #{variables => #{v1=>a, v2=> <<"b">>, v3=>{v3}}}),
 
     % we can also create tags from variable.
     {ok,<<"<p>test</p>">>}
-        = erml_tag:create([{tag}], #{variables => #{tag => {p, [<<"test">>]}}}),
+        = erml_html5:compile([{tag}], #{variables => #{tag => {p, [<<"test">>]}}}),
 
     % and so a full page.
     Html = {html, [{head}, {body}]},
@@ -319,7 +319,7 @@ variables(_Config) ->
     {ok,<<"<html><head></head>"
           "<body><h1>title</h1><p>paragraph</p></body>"
           "</html>">>}
-        = erml_tag:create(Html, #{variables => #{ head => Head
+        = erml_html5:compile(Html, #{variables => #{ head => Head
                                                 , body => Body
                                                 , title => {h1, title}
                                                 , paragraph => {p, paragraph}}}),
@@ -383,10 +383,10 @@ include_raw() -> [].
 include_raw(Config) ->
     DataDir = ?config(data_dir,Config),
     Opts = #{ root => DataDir },
-    {ok, <<"Lorem Ipsum\n\n", _/binary>>} = erml_tag:create({include_raw, "raw_ascii.txt"}, Opts),
-    {stop, _, _} = erml_tag:create({include_raw, "../raw.txt"}, Opts),
-    {stop, _, _} = erml_tag:create({include_raw, "../../raw.txt"}, Opts),
-    {stop, _, _} = erml_tag:create({include_raw, "./test/../../raw.txt"}, Opts),
+    {ok, <<"Lorem Ipsum\n\n", _/binary>>} = erml_html5:compile({include_raw, "raw_ascii.txt"}, Opts),
+    {stop, _, _} = erml_html5:compile({include_raw, "../raw.txt"}, Opts),
+    {stop, _, _} = erml_html5:compile({include_raw, "../../raw.txt"}, Opts),
+    {stop, _, _} = erml_html5:compile({include_raw, "./test/../../raw.txt"}, Opts),
     ok.
 
 %%--------------------------------------------------------------------
@@ -404,11 +404,11 @@ include_template(Config) ->
     DataDir = ?config(data_dir,Config),
     Opts = #{ root => DataDir },
     {ok, <<"<html><head><title>Lorem Ipsum</title></head><body>", _/binary>>} 
-        = erml_tag:create({include_template, "page_simple.erml"}, Opts),
+        = erml_html5:compile({include_template, "page_simple.erml"}, Opts),
     {ok, <<"<ul><li>In order to handle failure", _/binary>>} 
-        = erml_tag:create({include_template, "list_simple.erml"}, Opts),
-    {stop, _, _} = erml_tag:create({include_template, "../page_simple.erml"}, Opts),
-    {stop, _, _} = erml_tag:create({include_template, "./test../page_simple.erml"}, Opts),
+        = erml_html5:compile({include_template, "list_simple.erml"}, Opts),
+    {stop, _, _} = erml_html5:compile({include_template, "../page_simple.erml"}, Opts),
+    {stop, _, _} = erml_html5:compile({include_template, "./test../page_simple.erml"}, Opts),
     ok.
 
 %%--------------------------------------------------------------------
@@ -428,30 +428,30 @@ include_media(_Config) ->
     % A special include form dealing with media.
     % an HTML page is directly added without transformation
     {ok, <<"<p>data</p>">>}
-        = erml_tag:create({include_media, "test.html", #{}}),
+        = erml_html5:compile({include_media, "test.html", #{}}),
 
     % an image is converted as base64 and inserted in an <img> tag
     {ok, <<"<img src=\"...\">">>}
-        = erml_tag:create({include_media, "test.jpg", #{}}),
+        = erml_html5:compile({include_media, "test.jpg", #{}}),
 
     % an audio file will produce an audio tag
     {ok, <<"<audio controls src=\"...\"></audio>">>}
-        = erml_tag:create({include_media, "test.mp3", #{}}),
+        = erml_html5:compile({include_media, "test.mp3", #{}}),
 
     % a video file should also act in the same way
     {ok, <<"<video controls><source src=\"...\"></video>">>}
-        = erml_tag:create({include_media, "test.mp4", #{}}),
+        = erml_html5:compile({include_media, "test.mp4", #{}}),
 
     % An enforced type can be supplied to be sure included data is the
     % correct one used.
     {ok, <<"<audio controls src=\"...\"></audio>">>}
-        = erml_tag:create({include_media, {audio, "test.mp4"}, #{}}),
+        = erml_html5:compile({include_media, {audio, "test.mp4"}, #{}}),
 
     % an external url can be used to include external media. A cache
     % system should probably be used and a support for selecting
     % different kind of client could also be great.
     {ok, <<"<img src=\"...\"">>}
-        = erml_tag:create({include_media, "https://localhost:8080", #{}}),
+        = erml_html5:compile({include_media, "https://localhost:8080", #{}}),
 
     ok.
 
@@ -473,51 +473,51 @@ attributes(_Config) ->
 
     % void attribute
     {ok, <<"<p test></p>">>}
-        = erml_tag:create({p, #{ test => {} }, []}),
+        = erml_html5:compile({p, #{ test => {} }, []}),
 
     % simple attribute
     {ok, <<"<p id=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => <<"test">>}, []}),
+        = erml_html5:compile({p, #{ id => <<"test">>}, []}),
     {ok, <<"<p id=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => "test"}, []}),
+        = erml_html5:compile({p, #{ id => "test"}, []}),
     {ok, <<"<p id=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => test}, []}),
+        = erml_html5:compile({p, #{ id => test}, []}),
 
     % multi attributes
     {ok, <<"<p id=\"test\" class=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => "test", class => "test"}, []}),
+        = erml_html5:compile({p, #{ id => "test", class => "test"}, []}),
     {ok, <<"<p id=\"test\" class=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => "test", class => <<"test">>}, []}),
+        = erml_html5:compile({p, #{ id => "test", class => <<"test">>}, []}),
     {ok, <<"<p id=\"test\" class=\"test\"></p>">>}
-        = erml_tag:create({p, #{ id => "test", class => test}, []}),
+        = erml_html5:compile({p, #{ id => "test", class => test}, []}),
     
     % dynamic attribute using fun/0
     % FunRandomValue = fun() -> {ok, <<"random">>} end,
     % {ok, <<"<p id=\"random\"></p>">>}
-    %     = erml_tag:create({p, #{ id => FunRandomValue }, []}),
+    %     = erml_html5:compile({p, #{ id => FunRandomValue }, []}),
 
     % dynamic attribute using fun/1
     % FunRandomValue = fun(_Opts) -> {ok, <<"random">>} end,
     % {ok, <<"<p id=\"random\"></p>">>}
-    %     = erml_tag:create({p, #{ id => FunRandomValue }, []}),
+    %     = erml_html5:compile({p, #{ id => FunRandomValue }, []}),
 
     % attribute value can also be defined in variables.
     % {ok, <<"input id=\"test\">">>}
-    %     = erml_tag:create({input, #{ id => {id} }, []}, #{ variables => #{ id => test }}),
+    %     = erml_html5:compile({input, #{ id => {id} }, []}, #{ variables => #{ id => test }}),
 
     % attributes can be generated with a fun/0
     % FunRandomAttributes = fun() -> {ok, #{ id => random}} end,
     % {ok, <<"<p id=\"random\"></p>">>}
-    %     = erml_tag:create({p, FunRandomAttributes, []}),
+    %     = erml_html5:compile({p, FunRandomAttributes, []}),
 
     % attributes can be generated with a fun/1
     % FunRandomAttributes = fun(_Opts) -> {ok, #{ id => random}} end,
     % {ok, <<"<p id=\"random\"></p>">>}
-    %     = erml_tag:create({p, FunRandomAttributes, []}),
+    %     = erml_html5:compile({p, FunRandomAttributes, []}),
 
     % attributes can also be used from variable,
     % {ok, <<"<p id=\"test\"></p>">>}
-    %     = erml_tag:create({p, {attributes}, []}, #{ variables => #{ attributes => #{ id => test } }}),
+    %     = erml_html5:compile({p, {attributes}, []}, #{ variables => #{ attributes => #{ id => test } }}),
 
     % here an example with a CSRF Token protection
     % Csrf = fun() -> {ok, #{ type => hidden
@@ -527,21 +527,21 @@ attributes(_Config) ->
     % {ok, <<"<input type=\"hidden\" "
     %        "name=\"CSRFToken\" " 
     %        "value=\"8Ioo1T3SPaqi+33B91/leiysWYbGeqTN4zZqIfzu5us=\"">>}
-    %     = erml_tag:create({input, Csrf(), []}),
+    %     = erml_html5:compile({input, Csrf(), []}),
 
     % void attribute
     {ok, <<"<p test></p>">>}
-        = erml_tag:create({p, #{ test => {} }, []}),
+        = erml_html5:compile({p, #{ test => {} }, []}),
 
     % list support
     {ok, <<"<p test=\"1\"></p>">>}
-        = erml_tag:create({p, [{test, 1}], []}),
+        = erml_html5:compile({p, [{test, 1}], []}),
     {ok, <<"<p test></p>">>}
-        = erml_tag:create({p, [test], []}),
+        = erml_html5:compile({p, [test], []}),
 
     % Fun = fun() -> {ok, <<"random">>} end,
     % {ok, <<"<p id=\"data\" class=\"random\" test></p>">>}
-    %     = erml_tag:create({p, [test, {id, data}, {random, Fun}], []}),
+    %     = erml_html5:compile({p, [test, {id, data}, {random, Fun}], []}),
 
     ok.    
 
