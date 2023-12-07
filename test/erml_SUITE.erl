@@ -99,7 +99,8 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() ->
-    [tag, variables, include_raw, include_template].
+    [tag, variables, include_raw, include_template
+    ,custom_tag, attributes].
 
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
@@ -216,44 +217,56 @@ tag(_Config) ->
 custom_tag() -> [].
 custom_tag(_Config) ->
     % custom void element
-    {ok, <<"<html>">>} = erml_tag:create({{void, html}, []}),
-    {ok, <<"<html>">>} = erml_tag:create({{void, html}, #{}, []}),
+    {ok, <<"<html>">>} = erml_tag:create({{empty, html}, []}),
 
     % void elements support: area, base, br, col, embed, hr, img,
     % input, link, meta, source, track, wbr
-    {ok, <<"<input>">>} = erml_tag:create{input, []},
-    {ok, <<"<input>">>} = erml_tag:create{input, #{}, []},
+    {ok, <<"<input>">>} = erml_tag:create({input, #{}}),
+    {ok, <<"<input>">>} = erml_tag:create({<<"input">>, #{}}),
+    {ok, <<"<input>">>} = erml_tag:create({"input", #{}}),
 
-    {ok, <<"<area>">>} = erml_tag:create{area, []},
-    {ok, <<"<area>">>} = erml_tag:create{area, #{}, []},
+    {ok, <<"<area>">>} = erml_tag:create({area, #{}}),
+    {ok, <<"<area>">>} = erml_tag:create({<<"area">>, #{}}),
+    {ok, <<"<area>">>} = erml_tag:create({"area", #{}}),
 
-    {ok, <<"<base>">>} = erml_tag:create{base, []},
-    {ok, <<"<base>">>} = erml_tag:create{base, #{}, []},
+    {ok, <<"<base>">>} = erml_tag:create({base, #{}}),
+    {ok, <<"<base>">>} = erml_tag:create({"base", #{}}),
+    {ok, <<"<base>">>} = erml_tag:create({<<"base">>, #{}}),
 
-    {ok, <<"<br>">>} = erml_tag:create{br, []},
-    {ok, <<"<br>">>} = erml_tag:create{br, #{}, []},
+    {ok, <<"<br>">>} = erml_tag:create({br, #{}}),
+    {ok, <<"<br>">>} = erml_tag:create({"br", #{}}),
+    {ok, <<"<br>">>} = erml_tag:create({<<"br">>, #{}}),
 
-    {ok, <<"<col>">>} = erml_tag:create{col, []},
-    {ok, <<"<col>">>} = erml_tag:create{col, #{}, []},
+    {ok, <<"<col>">>} = erml_tag:create({col, #{}}),
+    {ok, <<"<col>">>} = erml_tag:create({<<"col">>, #{}}),
+    {ok, <<"<col>">>} = erml_tag:create({"col", #{}}),
 
-    {ok, <<"<embed>">>} = erml_tag:create{embed, []},
-    {ok, <<"<embed>">>} = erml_tag:create{embed, #{}, []},
+    {ok, <<"<embed>">>} = erml_tag:create({embed, #{}}),
+    {ok, <<"<embed>">>} = erml_tag:create({<<"embed">>, #{}}),
+    {ok, <<"<embed>">>} = erml_tag:create({"embed", #{}}),
 
-    {ok, <<"<hr>">>} = erml_tag:create{hr, []},
-    {ok, <<"<hr>">>} = erml_tag:create{hr, #{}, []},
+    {ok, <<"<hr>">>} = erml_tag:create({hr, #{}}),
+    {ok, <<"<hr>">>} = erml_tag:create({"hr", #{}}),
+    {ok, <<"<hr>">>} = erml_tag:create({<<"hr">>, #{}}),
 
-    {ok, <<"<img>">>} = erml_tag:create{img, []},
-    {ok, <<"<img>">>} = erml_tag:create{img, #{}, []},
+    {ok, <<"<img>">>} = erml_tag:create({img, #{}}),
+    {ok, <<"<img>">>} = erml_tag:create({"img", #{}}),
+    {ok, <<"<img>">>} = erml_tag:create({<<"img">>, #{}}),
 
-    {ok, <<"<link>">>} = erml_tag:create{link, []},
-    {ok, <<"<link>">>} = erml_tag:create{link, #{}, []},
+    {ok, <<"<link>">>} = erml_tag:create({link, #{}}),
+    {ok, <<"<link>">>} = erml_tag:create({<<"link">>, #{}}),
+    {ok, <<"<link>">>} = erml_tag:create({"link", #{}}),
 
-    {ok, <<"<meta>">>} = erml_tag:create{meta, []},
-    {ok, <<"<meta>">>} = erml_tag:create{meta, #{}, []},
+    {ok, <<"<meta>">>} = erml_tag:create({meta, #{}}),
+    {ok, <<"<meta>">>} = erml_tag:create({<<"meta">>, #{}}),
+    {ok, <<"<meta>">>} = erml_tag:create({"meta", #{}}),
 
-    {ok, <<"<source>">>} = erml_tag:create{source, []},
-    {ok, <<"<source>">>} = erml_tag:create{source, #{}, []},
+    {ok, <<"<source>">>} = erml_tag:create({source, #{}}),
+    {ok, <<"<source>">>} = erml_tag:create({<<"source">>, #{}}),
+    {ok, <<"<source>">>} = erml_tag:create({"source", #{}}),
 
+    % attributes
+    {ok, <<"<img src=\"/test.png\">">>} = erml_tag:create({img, #{ src => "/test.png" }}),
     ok.    
 
 %%--------------------------------------------------------------------
@@ -453,6 +466,15 @@ include_callback(_Config) -> ok.
 %%--------------------------------------------------------------------
 attributes() -> [].
 attributes(_Config) ->
+    % @TODO key must only contain printable characters
+    % @TODO value must be converted to html entities or if it contains
+    %       a double quote, use single quote, if it uses single quote,
+    %       use double quotes.
+
+    % void attribute
+    {ok, <<"<p test></p>">>}
+        = erml_tag:create({p, #{ test => {} }, []}),
+
     % simple attribute
     {ok, <<"<p id=\"test\"></p>">>}
         = erml_tag:create({p, #{ id => <<"test">>}, []}),
@@ -470,36 +492,57 @@ attributes(_Config) ->
         = erml_tag:create({p, #{ id => "test", class => test}, []}),
     
     % dynamic attribute using fun/0
-    FunRandomValue = fun() -> {ok, <<"random">>} end,
-    {ok, <<"<p id=\"random\"></p>">>}
-        = erml_tag:create({p, #{ id => FunRandomValue }, []}),
+    % FunRandomValue = fun() -> {ok, <<"random">>} end,
+    % {ok, <<"<p id=\"random\"></p>">>}
+    %     = erml_tag:create({p, #{ id => FunRandomValue }, []}),
 
     % dynamic attribute using fun/1
-    FunRandomValue = fun(_Opts) -> {ok, <<"random">>} end,
-    {ok, <<"<p id=\"random\"></p>">>}
-        = erml_tag:create({p, #{ id => FunRandomValue }, []}),
+    % FunRandomValue = fun(_Opts) -> {ok, <<"random">>} end,
+    % {ok, <<"<p id=\"random\"></p>">>}
+    %     = erml_tag:create({p, #{ id => FunRandomValue }, []}),
 
+    % attribute value can also be defined in variables.
+    % {ok, <<"input id=\"test\">">>}
+    %     = erml_tag:create({input, #{ id => {id} }, []}, #{ variables => #{ id => test }}),
 
     % attributes can be generated with a fun/0
-    FunRandomAttributes = fun() -> {ok, #{ id => random}} end,
-    {ok, <<"<p id=\"random\"></p>">>}
-        = erml_tag:create({p, FunRandomAttributes, []}),
+    % FunRandomAttributes = fun() -> {ok, #{ id => random}} end,
+    % {ok, <<"<p id=\"random\"></p>">>}
+    %     = erml_tag:create({p, FunRandomAttributes, []}),
 
     % attributes can be generated with a fun/1
-    FunRandomAttributes = fun(_Opts) -> {ok, #{ id => random}} end,
-    {ok, <<"<p id=\"random\"></p>">>}
-        = erml_tag:create({p, FunRandomAttributes, []}),
+    % FunRandomAttributes = fun(_Opts) -> {ok, #{ id => random}} end,
+    % {ok, <<"<p id=\"random\"></p>">>}
+    %     = erml_tag:create({p, FunRandomAttributes, []}),
 
+    % attributes can also be used from variable,
+    % {ok, <<"<p id=\"test\"></p>">>}
+    %     = erml_tag:create({p, {attributes}, []}, #{ variables => #{ attributes => #{ id => test } }}),
 
     % here an example with a CSRF Token protection
-    Csrf = fun() -> {ok, #{ type => hidden
-                          , name => "CSRFToken"
-                          , value => <<"8Ioo1T3SPaqi+33B91/leiysWYbGeqTN4zZqIfzu5us=">> }}
-           end,
-    {ok, <<"<input type=\"hidden\" "
-           "name=\"CSRFToken\" " 
-           "value=\"8Ioo1T3SPaqi+33B91/leiysWYbGeqTN4zZqIfzu5us=\"">>}
-        = erml_tag:create({input, Csrf(), []}),
-                            
-    ok.
+    % Csrf = fun() -> {ok, #{ type => hidden
+    %                       , name => "CSRFToken"
+    %                       , value => <<"8Ioo1T3SPaqi+33B91/leiysWYbGeqTN4zZqIfzu5us=">> }}
+    %        end,
+    % {ok, <<"<input type=\"hidden\" "
+    %        "name=\"CSRFToken\" " 
+    %        "value=\"8Ioo1T3SPaqi+33B91/leiysWYbGeqTN4zZqIfzu5us=\"">>}
+    %     = erml_tag:create({input, Csrf(), []}),
+
+    % void attribute
+    {ok, <<"<p test></p>">>}
+        = erml_tag:create({p, #{ test => {} }, []}),
+
+    % list support
+    {ok, <<"<p test=\"1\"></p>">>}
+        = erml_tag:create({p, [{test, 1}], []}),
+    {ok, <<"<p test></p>">>}
+        = erml_tag:create({p, [test], []}),
+
+    % Fun = fun() -> {ok, <<"random">>} end,
+    % {ok, <<"<p id=\"data\" class=\"random\" test></p>">>}
+    %     = erml_tag:create({p, [test, {id, data}, {random, Fun}], []}),
+
+    ok.    
+
     

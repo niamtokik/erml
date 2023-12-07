@@ -183,12 +183,12 @@ tag({include_template, Path, LocalOpts} = Tag, Opts, State) ->
 % call a module to create the content of the tag. The module should
 % have `init/2' function exposed and should return a valid tag.
 %--------------------------------------------------------------------
-tag({include_callback, Module}, Opts, State)
-  when is_atom(Module) ->
-    try apply(Module, init, [Opts, State])
-    catch
-        E:R:S -> {stop, {include_callback, {E,R,S}, State}}
-    end;
+% tag({include_callback, Module}, Opts, State)
+%   when is_atom(Module) ->
+%     try apply(Module, init, [Opts, State])
+%     catch
+%         E:R:S -> {stop, {include_callback, {E,R,S}, State}}
+%     end;
 
 %---------------------------------------------------------------------
 % call a standard behaviors and integrate their answer in the
@@ -268,20 +268,74 @@ tag({apply, Function}, Opts, State)
 % content.
 %---------------------------------------------------------------------
 tag({empty, Tag} = T, Opts, State) ->
-    {stop, {todo, T, Opts}, State};
+    tag({{empty, Tag}, #{}}, Opts, State);
+
+tag({{empty, Tag}, Attributes}, Opts, State) 
+  when is_binary(Tag) ->
+    {ok, bracket_empty(Tag, Attributes, Opts, State), <<>>, State};
+
+tag({{empty, Tag}, Attributes}, Opts, State) 
+  when is_atom(Tag) ->
+    tag({{empty, atom_to_binary(Tag)}, Attributes}, Opts, State);
+tag({{empty, Tag}, Attributes}, Opts, State) 
+  when is_list(Tag) ->
+    tag({{empty, list_to_binary(Tag)}, Attributes}, Opts, State);
+tag({{empty, Tag}, Attributes}, Opts, State) 
+  when is_integer(Tag) ->
+    tag({{empty, integer_to_binary(Tag)}, Attributes}, Opts, State);
 tag({{empty, Tag} = T, Attributes}, Opts, State) ->
     {stop, {todo, T, Opts}, State};
 
 %--------------------------------------------------------------------
-% some tags will behave differently:
-%  - base
-%  - br
-%  - img
-%  - input
-%  - link
-%  - meta
-%  - source
+% empty elements
 %--------------------------------------------------------------------
+tag({Tag, Attributes}, Opts, State) 
+  when Tag =:= input; Tag =:= "input"; Tag =:= <<"input">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State) 
+  when Tag =:= area; Tag =:= "area"; Tag =:= <<"area">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= base; Tag =:= "base"; Tag =:= <<"base">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= br; Tag =:= "br"; Tag =:= <<"br">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= col; Tag =:= "col"; Tag =:= <<"col">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= embed; Tag =:= "embed"; Tag =:= <<"embed">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= hr; Tag =:= "hr"; Tag =:= <<"hr">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= img; Tag =:= "img"; Tag =:= <<"img">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= link; Tag =:= "link"; Tag =:= <<"link">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= meta; Tag =:= "meta"; Tag =:= <<"meta">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+tag({Tag, Attributes}, Opts, State)
+  when Tag =:= source; Tag =:= "source"; Tag =:= <<"source">> ->
+    tag({{empty, Tag}, Attributes}, Opts, State);
+
+%---------------------------------------------------------------------
+% special elements
+%---------------------------------------------------------------------
 tag({<<"code">>, Attributes, [Integer|_] = Content} = Tag, Opts, State)
   when is_list(Content), is_integer(Integer), Integer>0 ->
     Result = list_to_binary(Content),
@@ -348,8 +402,15 @@ tag(Tags, Opts, State)
 % All tags defined as atom, list or numbers are converted into binary
 % by default. It offers a flexible way to define tags for the developer.
 %---------------------------------------------------------------------
-tag({Tag, Content}, Opts, State) ->
+% special case
+tag({Tag, Content}, Opts, State) 
+  when is_list(Content) ->
     tag({Tag, #{}, Content}, Opts, State);
+tag({Tag, Content}, Opts, State) 
+  when is_tuple(Content) ->
+    tag({Tag, #{}, Content}, Opts, State);
+
+% generic case
 tag({Tag, Attributes, Content}, Opts, State)
   when is_atom(Tag) ->
     NewTag = atom_to_binary(Tag),
@@ -414,7 +475,11 @@ tag_variable(_Variable, Opts, State) ->
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
-attributes(Tag, Attributes, Opts, State) ->
+attributes(Tag, Attributes, Opts, State) 
+  when is_list(Attributes) ->
+    attributes_list(Tag, Attributes, [], Opts, State);    
+attributes(Tag, Attributes, Opts, State) 
+  when is_map(Attributes) ->
     attributes(Tag, Attributes, maps:keys(Attributes), [], Opts, State).
 
 attributes(Tag, Attributes, [], Buffer, Opts, State) ->
@@ -422,9 +487,34 @@ attributes(Tag, Attributes, [], Buffer, Opts, State) ->
 attributes(Tag, Attributes, [Key|Keys], Buffer, Opts, State) ->
     Value = maps:get(Key, Attributes),
     case attribute(Tag, Key, Value, Opts, State) of
+        {ok, K, <<>>, NewState} ->
+            Pair = <<K/binary>>,
+            attributes(Tag, Attributes, Keys, [Pair|Buffer], Opts, NewState);
         {ok, K, V, NewState} ->
             Pair = <<K/binary,"=",V/binary>>,
             attributes(Tag, Attributes, Keys, [Pair|Buffer], Opts, NewState);
+        Elsewise ->
+            Elsewise
+    end.
+
+attributes_list(Tag, [], Buffer, Opts, State) ->
+    {ok, join(lists:reverse(Buffer)), State};
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+  when is_atom(Attribute) ->
+    Void = atom_to_binary(Attribute),
+    attributes_list(Tag, Attributes, [Void|Buffer], Opts, State);
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+  when is_binary(Attribute) ->
+    attributes_list(Tag, Attributes, [Attribute|Buffer], Opts, State);
+attributes_list(Tag, [Attribute|Attributes], Buffer, Opts, State) 
+  when is_list(Attribute) ->
+    Binary = list_to_binary(Attribute),
+    attributes_list(Tag, Attributes, [Binary|Buffer], Opts, State);
+attributes_list(Tag, [{Key,Value}|Attributes], Buffer, Opts, State) ->
+    case attribute(Tag, Key, Value, Opts, State) of
+        {ok, K, V, NewState} ->
+            Pair = <<K/binary,"=",V/binary>>,
+            attributes_list(Tag, Attributes, [Pair|Buffer], Opts, NewState);
         Elsewise ->
             Elsewise
     end.
@@ -456,22 +546,31 @@ attribute(Tag, Key, Value, Opts, State)
 attribute(Tag, Key, Value, Opts, State)
   when is_list(Value) ->
     attribute(Tag, Key, list_to_binary(Value), Opts, State);
+attribute(Tag, Key, Value, Opts, State)
+  when is_integer(Value) ->
+    attribute(Tag, Key, integer_to_binary(Value), Opts, State);
+attribute(Tag, Key, Value, Opts, State)
+  when is_float(Value) ->
+    attribute(Tag, Key, float_to_binary(Value), Opts, State);
 
 % some example of specific attributes
-attribute(<<"a">>, <<"href">> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
-attribute(<<"img">>, <<"src">> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
-attribute(_Tag, <<"style">>, Value, Opts, State) ->
-    {ok, <<"style">>, Value, State};
-attribute(_Tag, <<"on", _/binary>> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
-attribute(_Tag, <<"hx-vals">> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
-attribute(_Tag, <<"hx-", _binary/binary>> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
-attribute(_Tag, <<"htmx-", _binary/binary>> = Key, Value, Opts, State) ->
-    {ok, Key, Value, State};
+%% attribute(<<"a">>, <<"href">> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+%% % attribute(<<"img">>, <<"src">> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+%% attribute(_Tag, <<"style">>, Value, Opts, State) ->
+%%     {ok, <<"style">>, Value, State};
+%% attribute(_Tag, <<"on", _/binary>> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+%% attribute(_Tag, <<"hx-vals">> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+%% attribute(_Tag, <<"hx-", _binary/binary>> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+%% attribute(_Tag, <<"htmx-", _binary/binary>> = Key, Value, Opts, State) ->
+%%     {ok, Key, Value, State};
+attribute(_Tag, Key, {}, Opts, State)
+  when is_binary(Key) ->
+    {ok, Key, <<>>, State};
 attribute(_Tag, Key, Value, Opts, State)
   when is_binary(Key), is_binary(Value) ->
     {ok, Key, quote(Value, $"), State};
@@ -535,10 +634,15 @@ quote(Value, Char) ->
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
-bracket_empty(Element, <<>>) ->
-    <<"<", Element/binary, " />">>;
-bracket_empty(Element, Attributes) ->
-    <<"<", Element/binary, " ", Attributes/binary, " />">>.
+bracket_empty(Element, Attributes, Opts, State) ->
+    case  attributes(Element, Attributes, Opts, State) of
+        {ok, <<>>, NewState} ->
+            <<"<", Element/binary, ">">>;
+        {ok, NewAttributes, NewState} ->
+            <<"<", Element/binary, " ", NewAttributes/binary,">">>;
+        Elsewise ->
+            Elsewise
+    end.
 
 %%--------------------------------------------------------------------
 %%
