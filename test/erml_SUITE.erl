@@ -404,11 +404,11 @@ include_template(Config) ->
     DataDir = ?config(data_dir,Config),
     Opts = #{ root => DataDir },
     {ok, <<"<html><head><title>Lorem Ipsum</title></head><body>", _/binary>>} 
-        = erml_html5:compile({include_template, "page_simple.erml"}, Opts),
+        = erml_html5:compile({include, "page_simple.erml"}, Opts),
     {ok, <<"<ul><li>In order to handle failure", _/binary>>} 
-        = erml_html5:compile({include_template, "list_simple.erml"}, Opts),
-    {stop, _, _} = erml_html5:compile({include_template, "../page_simple.erml"}, Opts),
-    {stop, _, _} = erml_html5:compile({include_template, "./test../page_simple.erml"}, Opts),
+        = erml_html5:compile({include, "list_simple.erml"}, Opts),
+    {stop, _, _} = erml_html5:compile({include, "../page_simple.erml"}, Opts),
+    {stop, _, _} = erml_html5:compile({include, "./test../page_simple.erml"}, Opts),
     ok.
 
 %%--------------------------------------------------------------------
