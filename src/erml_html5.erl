@@ -147,6 +147,20 @@ tag({content, Content, LocalOpts}, Opts, State) ->
     content(Content, maps:merge(Opts, LocalOpts), State);
 
 %---------------------------------------------------------------------
+% add template include support. A template is an erml file or a list
+% of term containing erml html tags.
+%---------------------------------------------------------------------
+tag({include, Path}, #{ root := Root } = Opts, State) ->
+    case include_erml(Path, Opts) of
+        {ok, Template} ->
+            tag(Template, Opts, State);
+        {error, Reason} ->
+            {stop, {error, Reason, filename:join(Root, Path)}, State}
+    end;
+tag({include, _Path, _LocalOpts}, Opts, State) ->
+    {stop, {missing_root, Opts}, State};
+
+%---------------------------------------------------------------------
 % add raw include support. A raw include can use default parameters
 % from Opts but can also use local parameters, useful if someone needs
 % to insert a script or stylecheat.
@@ -166,18 +180,29 @@ tag({include_raw, _Path, _LocalOpts}, Opts, State) ->
     {stop, {missing_root, Opts}, State};
 
 %---------------------------------------------------------------------
-% add template include support. A template is an erml file or a list
-% of term containing erml html tags.
+% erml was not created to support templating system, but it could be
+% useful when migrating a service.
+%
+% {template, Type, TemplateData, Params}
+% {template_file, Type, Path, Params}
+%
+% {template, bbmustache, <<"{{test}}">>, #{ "test" => "test" }}
 %---------------------------------------------------------------------
-tag({include_template, Path}, #{ root := Root } = Opts, State) ->
-    case include_template(Path, Opts) of
-        {ok, Template} ->
-            tag(Template, Opts, State);
-        {error, Reason} ->
-            {stop, {error, Reason, filename:join(Root, Path)}, State}
+tag({template_file, Type, Filename, Params}, #{ root := Root } = Opts, State) ->
+    case include_raw(Filename, Opts) of
+        {ok, Data} ->
+            tag({template, Type, Data, Params}, Opts, State);
+        Elsewise ->
+            Elsewise
     end;
-tag({include_template, _Path, _LocalOpts}, Opts, State) ->
-    {stop, {missing_root, Opts}, State};
+tag({template, Type, Data, Params}, Opts, State) ->
+    try 
+        Result = Type:render(Data, Params),
+        {ok, Result, State}
+    catch
+        E:R:S -> 
+            {stop, {template, E, R, S}, State}
+    end;
 
 %---------------------------------------------------------------------
 % add template include support. A template is an erml file or a list
@@ -718,7 +743,7 @@ include_raw(Filename, #{ root := Root } = Opts) ->
 %%--------------------------------------------------------------------
 %%
 %%--------------------------------------------------------------------
-include_template(Filename, #{ root := Root } = Opts) ->
+include_erml(Filename, #{ root := Root } = Opts) ->
     FullPath = full_path(Filename, Root),
     case check_file(Filename, Opts) of
         {error, unsafe} ->
