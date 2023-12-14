@@ -3,6 +3,20 @@
 An html library for Erlang, and an sandbox for Erlang, Cowboy, Htmx
 Spectre, Mnesia (ECHSM).
 
+Main goals:
+
+ - simplicity
+ - flexibility
+ - extensibility
+ - portability
+
+Secondary goals:
+
+ - htmx compatible
+ - spectre css compatible
+ - templating libraries for common usage
+ - optimized compilation
+
 ## Build
 
 ```erlang
@@ -198,7 +212,9 @@ Files and templates can be added from a specific path. By default,
 `priv` directory is used as root.
 
 ```erlang
-{body, [{include_raw, "examples/erlang-punch/lorem_ipsum.txt"}]}.
+{body, [
+  {include_raw, "examples/erlang-punch/lorem_ipsum.txt"}
+]}.
 ```
 
 ```html
@@ -208,11 +224,26 @@ Files and templates can be added from a specific path. By default,
 `erml` files can also be added.
 
 ```erlang
-{body, {include, "examples/erlang-punch/hero_01.erml"}}.
+{body, [
+  {include, "examples/erlang-punch/hero_01.erml"}
+]}.
 ```
 
 ```html
 <body><div style="min-height: 100vh;" class="hero bg-primay">...
+```
+
+One can also use a templating system to insert different kind of
+content.
+
+```erlang
+{body, [
+  {template, bbmustache, <<"{{test}}">>, #{"test" => "hello world!"}}
+]}.
+```
+
+```html
+<body>hello world!</body>
 ```
 
 ### Calling Functions and Modules
