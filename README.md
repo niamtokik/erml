@@ -60,6 +60,146 @@ rebar3 compile
 
 Where `u`: unstable; `s`: stable
 
-### `{Tag, Content}`
+### Creating Standard Elements
 
+Standard elements are creating using tuples with 2 or 3 elements. A
+simple element can be created with an empty list.
 
+```erlang
+{html, []}.
+```
+
+```html
+<html></html>
+```
+
+Attributes can be added.
+
+```erlang
+{html, #{id => "page"}, []}.
+```
+
+```html
+<html id="page"></html>
+```
+
+Other elements can be added as contents.
+
+```erlang
+{html, #{}, 
+  {body, []}
+}.
+```
+
+```html
+<html><body></body></html>
+```
+
+```erlang
+{html, #{}, [
+  {head, []}, 
+  {body, []}
+]}.
+```
+
+```html
+<html><head></head><body></body></html>
+```
+
+It supports also empty elements.
+
+```erlang
+{{empty, image}, #{}}.
+```
+
+```html
+<image>
+```
+
+```erlang
+{{empty, image}, #{id => test}}
+```
+
+```html
+<image id=\"test\">
+```
+
+```erlang
+{{empty, image}, [selected]}.
+```
+
+```html
+<image selected>
+```
+
+Few elements are empty by default, and the content will be
+automatically converted as attributes or ignored.
+
+```erlang
+{meta, #{name => "twitter:card", content => "summary"}}.
+```
+
+```html
+<meta name="twitter:card" content="summary">
+```
+
+### Using Variables
+
+Variables are created using tuples with one element and defined in
+`variables` parameters key.
+
+```erlang
+% define variables
+Options = #{ 
+  variables => #{ 
+    test => <<"hello world!">> 
+  } 
+}.
+
+% create erml template
+Erml = {body, [
+  {p, {test}}
+]}.
+
+% compile it.
+erml:compile(Erml, Option).
+```
+
+```html
+<body><p>hello world!</p></body>
+```
+
+Variables can also includes erml data structure.
+
+```erlang
+% define variables
+Options = #{ 
+  variables => #{ 
+    test => {span, #{class => "bold"}, <<"hello world!">>}
+  } 
+}.
+
+% create erml template
+Erml = {body, [
+  {p, {test}}
+]}.
+
+% compile it.
+erml:compile(Erml, Option).
+```
+
+```html
+<body><p><span class=\"bold\">hello world!</span></p></body>
+```
+
+### Including Templates and Files
+
+Files and templates can be added from a specific path.
+
+### Calling Functions and Modules
+
+Functions and modules can be called.
+
+### Calling Running Processes
+
+Active processes using `gen_server` or `gen_statem` can be called.
