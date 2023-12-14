@@ -194,11 +194,38 @@ erml:compile(Erml, Option).
 
 ### Including Templates and Files
 
-Files and templates can be added from a specific path.
+Files and templates can be added from a specific path. By default,
+`priv` directory is used as root.
+
+```erlang
+{body, [{include_raw, "examples/erlang-punch/lorem_ipsum.txt"}]}.
+```
+
+```html
+<body>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</body>
+```
+
+`erml` files can also be added.
+
+```erlang
+{body, {include, "examples/erlang-punch/hero_01.erml"}}.
+```
+
+```html
+<body><div style="min-height: 100vh;" class="hero bg-primay">...
+```
 
 ### Calling Functions and Modules
 
 Functions and modules can be called.
+
+```erlang
+{body, {apply, fun() -> {ok, <<"hello world!">>} end}}.
+```
+
+```html
+<body>hello world!</body>
+```
 
 ### Calling Running Processes
 

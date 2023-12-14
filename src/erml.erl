@@ -6,6 +6,14 @@
 -module(erml).
 -export([read/1, read/2]).
 -export([compile/1, compile/2]).
+-export([params/0]).
+
+%%--------------------------------------------------------------------
+%%
+%%--------------------------------------------------------------------
+params() ->
+    Root = code:priv_dir(erml),
+    #{ root => Root }.
 
 %%--------------------------------------------------------------------
 %% @doc Read a file template.
@@ -13,17 +21,17 @@
 %% @end
 %%--------------------------------------------------------------------
 read(File) ->
-    Root = code:priv_dir(erml),
-    read(File, #{ root => Root }).
+    read(File, params()).
 
 %%--------------------------------------------------------------------
 %% @doc Read a file template.
 %% @end
 %%--------------------------------------------------------------------
 read(File, Opts) ->
+    Merged = maps:merge(params(), Opts),
     case file:consult(File) of
         {ok, Content} ->
-            compile(Content, Opts);
+            compile(Content, Merged);
         Elsewise ->
             Elsewise
     end.
@@ -34,19 +42,20 @@ read(File, Opts) ->
 %% @end
 %%--------------------------------------------------------------------
 compile(Template) ->
-    Root = code:priv_dir(erml),
-    compile(Template, #{ root => Root }).
+    compile(Template, params()).
 
 %%--------------------------------------------------------------------
 %% @doc Compile a template
 %% @end
 %%--------------------------------------------------------------------
 compile(Template, #{ output := list } = Opts) ->
-    case erml_html5:compile(Template, Opts) of
+    Merged = maps:merge(params(), Opts),
+    case erml_html5:compile(Template, Merged) of
         {ok, Data} when is_binary(Data) ->
             {ok, binary_to_list(Data)};
         Elsewise ->
             Elsewise
     end;
 compile(Template, Opts) ->
-    erml_html5:compile(Template, Opts).
+    Merged = maps:merge(params(), Opts),
+    erml_html5:compile(Template, Merged).
